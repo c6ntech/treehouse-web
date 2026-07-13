@@ -1,15 +1,24 @@
 /* =========================================================================
-   Treehouse 樹屋 — shared site chrome + language mechanism (Phase A skeleton)
+   樹屋 Treehouse — shared site chrome + language mechanism
 
    ONE source of truth for header / nav / footer / language switch.
    Every page just drops <header id="site-header"> and <footer id="site-footer">
    mount points; this file renders them. Edit nav/footer here once → all pages
    update ("改一處即可維護").
 
+   Phase B (visual layer) change note
+   ----------------------------------
+   - Brand lockup now = cabin logo image (/assets/treehouse-cabin.png) +
+     the "treehouse" wordmark (Caprasimo). The wordmark is a logo, so it is
+     the same string in every language (was the emoji 🏠 + localized t.brand).
+   - Footer now leads with the same "treehouse" wordmark.
+   - Nothing else changed: language detection / EN_READY gate / content
+     toggling all behave exactly as before.
+
    Language model
    --------------
    - Each page carries its legal text inline as [data-lang="zh"] and (later)
-     [data-lang="en"] blocks, so the content is always in the DOM and readable
+     [data-lang="en"] blocks, so content is always in the DOM and readable
      even if JS fails (important for in-app webview + store reviewers).
    - EN_READY gate: until the English translation lands, we always show zh and
      the switch shows an "English coming soon" note. Flip EN_READY = true (and
@@ -19,6 +28,8 @@
   "use strict";
 
   var EN_READY = false; // ← set true once English content is added to every page
+
+  var LOGO_SRC = "/assets/treehouse-cabin.png"; // self-hosted, no external CDN
 
   // ---- Pages (single source for nav + footer links) ----
   var PAGES = [
@@ -92,8 +103,8 @@
     return '' +
       '<div class="site-header__inner">' +
         '<a class="brand" href="/faq" aria-label="Treehouse">' +
-          '<span class="brand__logo" aria-hidden="true">🏠</span>' +
-          '<span class="brand__name">' + t.brand + "</span>" +
+          '<span class="brand__logo" aria-hidden="true"><img src="' + LOGO_SRC + '" alt=""></span>' +
+          '<span class="brand__name">treehouse</span>' +
         "</a>" +
         '<nav class="site-nav" aria-label="' + t.footerLinksLabel + '">' + navHtml + "</nav>" +
         langHtml +
@@ -108,6 +119,7 @@
     var year = "2026"; // static build; bump if needed
     return '' +
       '<div class="site-footer__inner">' +
+        '<p class="foot-word">treehouse</p>' +
         '<nav class="site-footer__links" aria-label="' + t.footerLinksLabel + '">' + links + "</nav>" +
         "<p>" + t.company + "</p>" +
         "<p>" + t.contactLabel + "：<a href=\"mailto:" + t.email + "\">" + t.email + "</a></p>" +
