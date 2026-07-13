@@ -27,7 +27,7 @@
 (function () {
   "use strict";
 
-  var EN_READY = false; // ← set true once English content is added to every page
+  var EN_READY = true; // English content added to all pages; auto browser-language detection + zh/EN switch enabled
 
   var LOGO_SRC = "/assets/treehouse-cabin.png"; // self-hosted, no external CDN
 
