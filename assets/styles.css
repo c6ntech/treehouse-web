@@ -1,0 +1,187 @@
+/* =========================================================================
+   Treehouse 樹屋 — official web (legal + support pages)
+   Skeleton stylesheet (Phase A). PLACEHOLDER visual values only.
+   Claude Design (Phase B) will refine tokens/components; keep the variable
+   names so downstream pages need no markup changes — edit values here once.
+   Palette placeholders sampled from the Treehouse app reference screens
+   (cream background + chestnut-brown wordmark / pill buttons).
+   ========================================================================= */
+
+:root {
+  /* --- Brand palette (placeholder — CD to finalize) --- */
+  --c-bg:            #faf0e9;  /* app cream background            */
+  --c-surface:       #ffffff;  /* cards / raised surfaces         */
+  --c-ink:           #4a2f1e;  /* primary text (warm dark brown)  */
+  --c-ink-soft:      #6f5844;  /* secondary text                  */
+  --c-brand:         #7a3d18;  /* chestnut — wordmark / primary   */
+  --c-brand-hover:   #632f11;
+  --c-brand-weak:    #f0dccb;  /* tinted borders / dividers       */
+  --c-link:          #9a4a1c;
+  --c-focus:         #1b6ac9;  /* accessible focus ring           */
+
+  /* --- Typography --- */
+  --font-body: system-ui, -apple-system, "Segoe UI", "PingFang TC",
+               "Microsoft JhengHei", "Noto Sans TC", sans-serif;
+  --font-brand: "Caprasimo", Georgia, "Songti TC", serif; /* wordmark = Caprasimo (confirmed); CD to self-host the font file (no external CDN) */
+
+  /* --- Layout --- */
+  --measure: 42rem;      /* readable content column width */
+  --gutter: 1.25rem;
+  --radius: 14px;        /* app uses soft rounded pills/cards */
+  --radius-pill: 999px;
+
+  --shadow-sm: 0 1px 2px rgba(74,47,30,.08);
+  --shadow-md: 0 6px 20px rgba(74,47,30,.10);
+}
+
+/* ---- Reset-ish ---- */
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+body {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 17px;
+  line-height: 1.75;
+  color: var(--c-ink);
+  background: var(--c-bg);
+  /* iOS webview safe-area padding */
+  padding: env(safe-area-inset-top) env(safe-area-inset-right)
+           env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+
+/* ---- Skip link (a11y) ---- */
+.skip-link {
+  position: absolute; left: -999px; top: 0;
+  background: var(--c-brand); color: #fff; padding: .6rem 1rem;
+  border-radius: 0 0 var(--radius) 0; z-index: 100;
+}
+.skip-link:focus { left: 0; }
+
+/* ---- Header ---- */
+.site-header {
+  background: var(--c-bg);
+  border-bottom: 1px solid var(--c-brand-weak);
+  position: sticky; top: 0; z-index: 50;
+  backdrop-filter: saturate(120%) blur(4px);
+}
+.site-header__inner {
+  max-width: var(--measure);
+  margin: 0 auto;
+  padding: .85rem var(--gutter);
+  display: flex; align-items: center; gap: .75rem;
+  flex-wrap: wrap;
+}
+.brand {
+  display: inline-flex; align-items: center; gap: .5rem;
+  text-decoration: none; color: var(--c-brand);
+  font-family: var(--font-brand);
+  font-size: 1.4rem; font-weight: 700; letter-spacing: .2px;
+}
+.brand__logo { font-size: 1.5rem; line-height: 1; }
+.site-nav {
+  margin-left: auto;
+  display: flex; gap: .25rem; flex-wrap: wrap;
+}
+.site-nav a {
+  color: var(--c-ink-soft); text-decoration: none;
+  font-size: .95rem; padding: .35rem .6rem; border-radius: var(--radius-pill);
+}
+.site-nav a:hover { color: var(--c-brand); background: var(--c-brand-weak); }
+.site-nav a[aria-current="page"] { color: var(--c-brand); font-weight: 600; }
+
+/* ---- Language switch ---- */
+.lang-switch {
+  display: inline-flex; border: 1px solid var(--c-brand-weak);
+  border-radius: var(--radius-pill); overflow: hidden;
+}
+.lang-switch button {
+  font: inherit; font-size: .82rem; cursor: pointer;
+  border: 0; background: transparent; color: var(--c-ink-soft);
+  padding: .3rem .7rem;
+}
+.lang-switch button[aria-pressed="true"] { background: var(--c-brand); color: #fff; }
+
+/* ---- Main / content ---- */
+.content {
+  max-width: var(--measure);
+  margin: 0 auto;
+  padding: 2rem var(--gutter) 3rem;
+}
+.content h1 {
+  font-family: var(--font-brand);
+  font-size: 1.9rem; line-height: 1.25; margin: 0 0 .35rem; color: var(--c-brand);
+}
+.content .doc-meta { color: var(--c-ink-soft); font-size: .9rem; margin: 0 0 1.5rem; }
+.content h2 { font-size: 1.3rem; margin: 2.2rem 0 .6rem; }
+.content h3 { font-size: 1.08rem; margin: 1.6rem 0 .4rem; }
+.content p, .content li { overflow-wrap: break-word; }
+.content ul, .content ol { padding-left: 1.4rem; }
+.content li { margin: .3rem 0; }
+.content a { color: var(--c-link); }
+.content hr { border: 0; border-top: 1px solid var(--c-brand-weak); margin: 2rem 0; }
+.content blockquote {
+  margin: 1.2rem 0; padding: .8rem 1rem;
+  background: var(--c-surface); border-left: 4px solid var(--c-brand);
+  border-radius: 0 var(--radius) var(--radius) 0; box-shadow: var(--shadow-sm);
+}
+.content code {
+  font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  font-size: .9em; background: var(--c-brand-weak); padding: .1em .35em; border-radius: 6px;
+  overflow-wrap: anywhere;
+}
+
+/* ---- Tables (privacy 3rd-party list etc.) ---- */
+.table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; margin: 1rem 0; }
+.content table {
+  border-collapse: collapse; width: 100%; min-width: 32rem;
+  background: var(--c-surface); border-radius: var(--radius); overflow: hidden;
+  box-shadow: var(--shadow-sm); font-size: .95rem;
+}
+.content th, .content td {
+  text-align: left; padding: .7rem .85rem; border-bottom: 1px solid var(--c-brand-weak);
+  vertical-align: top;
+}
+.content th { background: var(--c-brand-weak); font-weight: 600; }
+.content tr:last-child td { border-bottom: 0; }
+
+/* ---- Notice banner (e.g. "English coming soon") ---- */
+.notice {
+  background: var(--c-surface); border: 1px solid var(--c-brand-weak);
+  border-radius: var(--radius); padding: .75rem 1rem; margin: 0 0 1.5rem;
+  font-size: .95rem; color: var(--c-ink-soft); box-shadow: var(--shadow-sm);
+}
+
+/* ---- Footer ---- */
+.site-footer {
+  border-top: 1px solid var(--c-brand-weak);
+  background: var(--c-bg);
+}
+.site-footer__inner {
+  max-width: var(--measure); margin: 0 auto;
+  padding: 2rem var(--gutter) 2.5rem;
+  color: var(--c-ink-soft); font-size: .9rem;
+}
+.site-footer__links { display: flex; flex-wrap: wrap; gap: .25rem 1rem; margin: 0 0 1rem; }
+.site-footer__links a { color: var(--c-ink-soft); text-decoration: none; }
+.site-footer__links a:hover { color: var(--c-brand); text-decoration: underline; }
+
+/* ---- Focus visibility (a11y / keyboard) ---- */
+:where(a, button):focus-visible {
+  outline: 3px solid var(--c-focus); outline-offset: 2px; border-radius: 4px;
+}
+
+/* ---- Language visibility (JS toggles [hidden]) ---- */
+[data-lang][hidden] { display: none !important; }
+
+/* ---- Small screens ---- */
+@media (max-width: 34rem) {
+  body { font-size: 16px; }
+  .site-header__inner { gap: .5rem; }
+  .site-nav { width: 100%; margin-left: 0; order: 3; }
+  .content h1 { font-size: 1.6rem; }
+}
+
+/* ---- Reduced motion ---- */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+}
