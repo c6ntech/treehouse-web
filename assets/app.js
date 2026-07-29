@@ -36,7 +36,8 @@
     { path: "/privacy",        key: "privacy" },
     { path: "/terms",          key: "terms" },
     { path: "/delete-account", key: "delete" },
-    { path: "/faq",            key: "faq" }
+    { path: "/faq",            key: "faq" },
+    { path: "/child-safety",   key: "childSafety" }
   ];
 
   // ---- i18n strings for the CHROME only (page content lives in the HTML) ----
@@ -45,7 +46,7 @@
       htmlLang: "zh-Hant",
       brand: "樹屋",
       skip: "跳至主要內容",
-      nav: { privacy: "隱私權政策", terms: "使用條款", delete: "刪除帳戶", faq: "常見問題" },
+      nav: { privacy: "隱私權政策", terms: "使用條款", delete: "刪除帳戶", faq: "常見問題", childSafety: "兒少安全" },
       footerLinksLabel: "頁面",
       company: "櫻桃科技有限公司（Cherryon CO., LTD.）",
       contactLabel: "聯絡我們",
@@ -57,7 +58,7 @@
       htmlLang: "en",
       brand: "Treehouse",
       skip: "Skip to main content",
-      nav: { privacy: "Privacy", terms: "Terms", delete: "Delete Account", faq: "FAQ" },
+      nav: { privacy: "Privacy", terms: "Terms", delete: "Delete Account", faq: "FAQ", childSafety: "Child Safety" },
       footerLinksLabel: "Pages",
       company: "Cherryon CO., LTD.",
       contactLabel: "Contact",

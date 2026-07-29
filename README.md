@@ -1,6 +1,6 @@
 # treehouse-web
 
-樹屋 Treehouse App 官方網頁。四個共用版型頁面，滿足 App Store / Google Play 上架審核，並在 App 內以 in-app webview 呈現。
+樹屋 Treehouse App 官方網頁。五個共用版型頁面，滿足 App Store / Google Play 上架審核，並在 App 內以 in-app webview 呈現。
 
 - 線上網址（規劃）：`https://gettreehouse.app`
 - Host：GitHub Pages（比照 cherryon-web → cherryontech.com 模式）
@@ -15,6 +15,7 @@
 | `/terms` | `terms/index.html` | 使用條款 |
 | `/delete-account` | `delete-account/index.html` | 刪除帳戶說明（Apple + Google 必填） |
 | `/faq` | `faq/index.html` | 常見問題（兼 Apple Support URL） |
+| `/child-safety` | `child-safety/index.html` | 兒少性剝削與虐待防範聲明（Google Play Child Safety Standards 必填） |
 | `/*` | `404.html` | 找不到頁面 |
 
 乾淨網址（無 `.html`）靠「資料夾 + `index.html`」達成，GitHub Pages 原生支援。
