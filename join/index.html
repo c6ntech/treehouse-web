@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="index,follow">
+  <title>treehouse ｜ 每晚10點，認真聊天</title>
+  <meta name="description" content="Treehouse Beta 測試招募中 — 純文字、全匿名的交友 App。每晚 10 點，三個回合，認真聊天。">
+  <link rel="canonical" href="https://gettreehouse.app/join">
+
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://gettreehouse.app/join">
+  <meta property="og:site_name" content="treehouse">
+  <meta property="og:title" content="treehouse ｜ 每晚10點，認真聊天">
+  <meta property="og:description" content="純文字、全匿名的交友 App。每晚 10 點，三個回合，認真聊天。Beta 測試招募中。">
+  <meta property="og:image" content="https://gettreehouse.app/assets/join/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:locale" content="zh_TW">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="treehouse ｜ 每晚10點，認真聊天">
+  <meta name="twitter:description" content="純文字、全匿名的交友 App。每晚 10 點，三個回合，認真聊天。Beta 測試招募中。">
+  <meta name="twitter:image" content="https://gettreehouse.app/assets/join/og-image.png">
+
+  <link rel="stylesheet" href="/assets/styles.css">
+  <link rel="stylesheet" href="/assets/join.css">
+</head>
+<body data-page="join">
+  <a class="skip-link" href="#main">跳至主要內容</a>
+
+  <main id="main">
+    <section class="join-hero">
+      <div class="hero__logo" aria-hidden="true"><img src="/assets/treehouse-cabin.png" alt=""></div>
+      <p class="hero__word">treehouse</p>
+      <p class="join-hero__slogan">每晚10點，認真聊天</p>
+      <p class="join-hero__tag">純文字｜全匿名｜三個回合</p>
+
+      <div class="signboard" aria-live="polite">
+        <span class="signboard__number" id="signupNumber">298</span>
+        <span class="signboard__label">報名人數</span>
+      </div>
+
+      <p>
+        <a class="cta" id="ctaButton" href="https://forms.gle/oKRJeB39md3gFTvH9" target="_blank" rel="noopener noreferrer">我要報名</a>
+      </p>
+    </section>
+
+    <!-- 男女比例條：Beta 後期由 join.config.js 的 genderRatio.enabled 開啟，目前隱藏不佔版位 -->
+    <section class="gender-ratio" id="genderRatio" hidden aria-label="即時男女比例">
+      <div class="gender-ratio__bar" role="img" aria-label="目前男女比例">
+        <span class="gender-ratio__female" id="genderFemaleBar"></span>
+        <span class="gender-ratio__male" id="genderMaleBar"></span>
+      </div>
+      <div class="gender-ratio__labels">
+        <span>女性 <b id="genderFemalePct">–</b></span>
+        <span>男性 <b id="genderMalePct">–</b></span>
+      </div>
+    </section>
+
+    <section class="how" aria-label="Treehouse 怎麼玩">
+      <h2 class="how__title">Treehouse 怎麼玩</h2>
+      <div class="how__viewport">
+        <div class="how__track" id="howTrack" tabindex="0" aria-label="操作說明輪播，可左右滑動或用方向鍵切換">
+          <figure class="how__slide">
+            <img src="/assets/join/carousel/how-01.webp" width="552" height="1200"
+                 alt="Treehouse 品牌畫面，顯示今晚 22:00 場次與開放報名倒數" loading="lazy" decoding="async">
+          </figure>
+          <figure class="how__slide">
+            <img src="/assets/join/carousel/how-02.webp" width="552" height="1200"
+                 alt="配對成功後彼此互抽話題卡，展開未知的聊天體驗" loading="lazy" decoding="async">
+          </figure>
+          <figure class="how__slide">
+            <img src="/assets/join/carousel/how-03.webp" width="552" height="1200"
+                 alt="三回合限時聊天，時間到雙方各自表決是否繼續聊下去" loading="lazy" decoding="async">
+          </figure>
+          <figure class="how__slide">
+            <img src="/assets/join/carousel/how-04.webp" width="552" height="1200"
+                 alt="性別平衡機制：加入後依比例排隊，平衡後立即通知你加入" loading="lazy" decoding="async">
+          </figure>
+        </div>
+        <button class="how__arrow how__arrow--prev" type="button" aria-label="上一張">‹</button>
+        <button class="how__arrow how__arrow--next" type="button" aria-label="下一張">›</button>
+      </div>
+      <div class="how__dots" id="howDots">
+        <button type="button" aria-label="查看第 1 張說明圖" aria-current="true" class="is-active"></button>
+        <button type="button" aria-label="查看第 2 張說明圖" aria-current="false"></button>
+        <button type="button" aria-label="查看第 3 張說明圖" aria-current="false"></button>
+        <button type="button" aria-label="查看第 4 張說明圖" aria-current="false"></button>
+      </div>
+    </section>
+
+    <!-- 沒有免費版本：Public Release 才由 join.config.js 的 pricing.enabled 開啟 -->
+    <section class="pricing" id="pricingSection" hidden>
+      <button class="pricing__toggle" id="pricingToggle" type="button" aria-expanded="false" aria-controls="pricingBody">
+        <span>Treehouse 沒有免費版本</span>
+      </button>
+      <div class="pricing__body" id="pricingBody" hidden>
+        <p>為了讓每一場聊天都安全、純粹，我們以訂閱方式運營。</p>
+        <p>每月 <span id="pricingAmount">NT$240</span>，前 <span id="pricingTrial">30 天</span> 免費試用，可隨時取消。</p>
+        <p>加入後你將獲得：</p>
+        <ul>
+          <li>一個安全認真聊天的空間</li>
+          <li>每天 2 場純粹認真的聊天機會</li>
+          <li>無任何廣告打擾</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- 倒數計時：目標日由 Morgan 決定後在 join.config.js 設定 countdown.targetIso 開啟 -->
+    <section class="countdown" id="countdownSection" hidden>
+      <p>距離公測開始還有 <b id="countdownDays">–</b> 天</p>
+    </section>
+  </main>
+
+  <footer id="site-footer"></footer>
+
+  <!--
+    載入順序固定：join.config.js → join.js → app.js（皆 defer，document order 保序）。
+    join.js 開頭會把 localStorage th-lang 鎖定為 "zh"，必須搶在 app.js 的
+    init() 讀取語言偏好之前跑完，這個頁面才不會被共用 footer 洩出英文。
+
+    join.js 在設定了 ga4.measurementId 時才會動態插入 googletagmanager.com 的
+    gtag.js。這是刻意的、有記錄的例外：STYLE_BRIEF.md §7「全站零外連資源」的
+    理由是 App 內嵌 webview／審核環境穩定性與法律頁隱私，/join 是從 Threads
+    開啟的外部導流頁，不會被 App 內嵌，兩個理由都不適用；沒填 ID 時零外部請求。
+  -->
+  <script src="/assets/join.config.js" defer></script>
+  <script src="/assets/join.js" defer></script>
+  <script src="/assets/app.js" defer></script>
+</body>
+</html>

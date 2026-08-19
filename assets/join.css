@@ -1,0 +1,276 @@
+/* =========================================================================
+   Treehouse /join — 頁面專屬樣式。疊在 styles.css 的 token/reset 之上，
+   只有這個頁面會載入，法律頁不受影響。刻意不依賴 100vh（見下方 .how__track
+   與 hero 區塊註解）——手機瀏覽器工具列會讓 100vh 比實際可視區高，直接
+   吃掉「首屏免捲動」這個最不能妥協的需求。
+   ========================================================================= */
+
+/* ---- Hero（無 sticky header，logo/wordmark 沿用 styles.css 既有 class 但縮小） ---- */
+.join-hero {
+  text-align: center;
+  max-width: var(--measure);
+  margin: 0 auto;
+  padding: 1.8rem var(--gutter) 1.2rem;
+}
+.join-hero .hero__logo { width: 60px; height: 60px; margin: 0 auto .45rem; }
+.join-hero .hero__word { font-size: 2.15rem; margin: 0 0 .5rem; }
+
+.join-hero__slogan {
+  font-size: 1.28rem;
+  font-weight: 700;
+  color: var(--color-text);
+  margin: 0 0 .25rem;
+  line-height: 1.35;
+}
+.join-hero__tag {
+  color: var(--color-text-soft);
+  font-size: .96rem;
+  margin: 0 0 1.5rem;
+}
+
+/* ---- 報名人數看板 ---- */
+.signboard {
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: .1rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 1.15rem 2.4rem 1rem;
+  margin: 0 auto 1.4rem;
+  box-shadow: var(--shadow-md);
+  min-width: 10rem;
+}
+.signboard::before,
+.signboard::after {
+  content: "";
+  position: absolute;
+  top: -7px;
+  width: 13px; height: 13px;
+  border-radius: 50%;
+  background: var(--color-brand-weak);
+  border: 1px solid var(--color-border);
+}
+.signboard::before { left: 16px; }
+.signboard::after { right: 16px; }
+
+.signboard__number {
+  font-family: var(--font-brand);
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+  font-size: 3.1rem;
+  line-height: 1;
+  color: var(--color-brand);
+  letter-spacing: -0.01em;
+}
+.signboard__label {
+  font-size: .88rem;
+  color: var(--color-text-soft);
+  letter-spacing: .03em;
+  margin-top: .15rem;
+}
+
+/* ---- 主 CTA（單一按鈕，無次要按鈕） ---- */
+.cta {
+  display: inline-block;
+  background: var(--color-brand);
+  color: #fff;
+  font-weight: 600;
+  font-size: 1.06rem;
+  text-decoration: none;
+  padding: .9rem 2.5rem;
+  border-radius: var(--radius-pill);
+  box-shadow: var(--shadow-sm);
+  transition: background .12s ease, transform .12s ease;
+}
+.cta:hover { background: var(--color-brand-hover); transform: translateY(-1px); }
+.cta:active { transform: translateY(0); }
+
+/* ---- 男女比例條（Beta 後期開啟；[hidden] 前不佔版位） ---- */
+.gender-ratio {
+  max-width: var(--measure);
+  margin: 0 auto 2rem;
+  padding: 1.6rem var(--gutter) 0;
+}
+.gender-ratio__bar {
+  display: flex;
+  height: 14px;
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+  background: var(--color-brand-weak);
+  box-shadow: var(--shadow-sm);
+}
+.gender-ratio__female,
+.gender-ratio__male {
+  height: 100%;
+  width: 50%;
+  transition: width 1.1s cubic-bezier(.22, .61, .36, 1);
+  background-size: 220% 100%;
+  animation: gr-flow 3.4s ease-in-out infinite;
+}
+.gender-ratio__female { background-image: linear-gradient(90deg, #E8ADC0, #F3C9D6, #E8ADC0); }
+.gender-ratio__male { background-image: linear-gradient(90deg, #8FAFC9, #B7CBDD, #8FAFC9); }
+@keyframes gr-flow {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+.gender-ratio__labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: .85rem;
+  color: var(--color-text-soft);
+  margin-top: .45rem;
+}
+
+/* ---- 「怎麼玩」輪播 — 高度受限、兩側露邊（IG 輪播視覺語言） ----
+   原圖 1320x2868（比例 ≈0.46）。若照容器寬度撐滿，390px 手機上單張會
+   高達 ~846px，吃掉超過一整個螢幕，所以改成「限制高度、寬度依比例自動
+   決定」，讓每張圖天然比容器窄，兩側露出鄰張的邊緣。 */
+.how { padding: .4rem 0 2rem; }
+.how__title {
+  text-align: center;
+  font-size: 1.1rem;
+  color: var(--color-brand);
+  margin: 0 0 .9rem;
+}
+.how__viewport {
+  position: relative;
+  max-width: var(--measure);
+  margin: 0 auto;
+}
+.how__track {
+  display: flex;
+  gap: 14px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-x;
+  height: 58vh;      /* vh fallback first */
+  height: 58dvh;      /* dvh overrides where supported — avoids the 100vh in-app-toolbar trap */
+  max-height: 620px;
+  min-height: 320px;
+  padding-inline: 14%;
+  scroll-padding-inline: 14%;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.how__track::-webkit-scrollbar { display: none; }
+.how__track:focus-visible { outline: 3px solid var(--color-focus); outline-offset: 2px; }
+.how__slide {
+  flex: none;
+  height: 100%;
+  margin: 0;    /* <figure> 預設有 UA margin（通常 1em 40px），沒歸零會讓 track 的 scrollWidth
+                   多出好幾百 px，slide 位置整個算錯，看不到預期的鄰張露邊 */
+  scroll-snap-align: center;
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--shadow-md);
+}
+.how__slide img {
+  height: 100%;
+  width: auto;
+  display: block;
+  border-radius: var(--radius);
+}
+.how__arrow { display: none; }
+@media (hover: hover) and (pointer: fine) {
+  .how__arrow {
+    display: grid;
+    place-items: center;
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 42px; height: 42px;
+    border-radius: 50%;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    box-shadow: var(--shadow-sm);
+    cursor: pointer;
+    font-size: 1.35rem;
+    line-height: 1;
+    color: var(--color-brand);
+  }
+  .how__arrow--prev { left: 8px; }
+  .how__arrow--next { right: 8px; }
+  .how__arrow:hover { background: var(--color-brand-weak); }
+}
+.how__dots {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: .5rem;
+  margin-top: .9rem;
+}
+.how__dots button {
+  width: 8px; height: 8px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--color-brand-weak);
+  cursor: pointer;
+  transition: width .2s ease, background .2s ease;
+}
+.how__dots button.is-active {
+  background: var(--color-brand);
+  width: 20px;
+  border-radius: var(--radius-pill);
+}
+
+/* ---- 「沒有免費版本」（Public Release 開啟；[hidden] 前不佔版位） ---- */
+.pricing {
+  max-width: var(--measure);
+  margin: 0 auto 2rem;
+  padding: 0 var(--gutter);
+}
+.pricing__toggle {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: .6rem;
+  text-align: left;
+  font: inherit;
+  font-weight: 700;
+  font-size: 1.03rem;
+  color: var(--color-brand);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 1rem 1.2rem;
+  cursor: pointer;
+}
+.pricing__toggle::after { content: "+"; font-weight: 400; font-size: 1.2rem; }
+.pricing__toggle[aria-expanded="true"]::after { content: "\2013"; }
+.pricing__body {
+  padding: 1rem .2rem 0;
+  color: var(--color-text-soft);
+  font-size: .95rem;
+}
+.pricing__body ul { padding-left: 1.3rem; margin: .5rem 0; }
+.pricing__body li { margin: .3rem 0; }
+
+/* ---- 倒數計時（Public Release 目標日確定後開啟；[hidden] 前不佔版位） ---- */
+.countdown {
+  text-align: center;
+  padding: .5rem var(--gutter) 1.8rem;
+  color: var(--color-text-soft);
+  font-size: .95rem;
+}
+.countdown b { color: var(--color-brand); font-size: 1.2rem; font-variant-numeric: tabular-nums; }
+
+/* ---- Small screens (≤360px 不可破版) ---- */
+@media (max-width: 34rem) {
+  .signboard__number { font-size: 2.7rem; }
+  .join-hero__slogan { font-size: 1.14rem; }
+  .cta { padding: .82rem 2.1rem; font-size: 1rem; }
+  .how__track { padding-inline: 8%; scroll-padding-inline: 8%; }
+}
+
+/* ---- Reduced motion ---- */
+@media (prefers-reduced-motion: reduce) {
+  .gender-ratio__female, .gender-ratio__male { animation: none; transition: none; }
+  .cta { transition: none; }
+  .how__dots button { transition: none; }
+}
