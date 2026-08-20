@@ -11,7 +11,11 @@ window.JOIN_CONFIG = {
   // ---- 報名人數看板 ----
   signup: {
     mode: "sheet",           // "sheet" = 讀 Google Sheet 即時值（正式模式）。"mock" = 只顯示 baseValue，完全不對外連線
-    baseValue: 298,            // mode:"mock" 時的顯示值，或 mode:"sheet" 但抓取失敗時的最後防線
+    // 只是後備值：mode:"mock" 時的顯示值，或 mode:"sheet" 抓取失敗時的最後防線。
+    // 正常情況畫面上的數字來自下面那份 Sheet 的 B1，不是這裡。
+    // 要調整起算人數請改 Sheet 的 B2（起算值），不要改這裡 —— 這裡跟著對齊就好，
+    // 免得抓取失敗時掉回一個跟 Sheet 差很多的數字。
+    baseValue: 113,
     round: "floor",             // "floor" 無條件捨去到整數；"none" 不處理（Sheet 應該本來就是整數）
 
     // ⚠️ 這份試算表會被公開讀取（Google 的 gviz 端點要求整份表可公開存取）。

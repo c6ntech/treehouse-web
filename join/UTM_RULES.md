@@ -3,8 +3,8 @@
 給發文的人看的。目的只有一個：**發文之後能回答「哪一篇貼文帶進多少人、多少人按了報名」。**
 
 工具在 <https://gettreehouse.app/join/utm-tool/>（不會被搜尋引擎索引，存書籤即可）。
-下拉選平台、填一個代稱、按複製 —— 正常情況不需要自己拼字串，這份文件是給你了解
-規則、以及工具不夠用時查的。
+開頁就會依今天日期把代稱填好，選平台、按複製就能用。這份文件是給你了解規則、
+以及工具不夠用時查的。
 
 ---
 
@@ -13,54 +13,73 @@
 完整連結長這樣：
 
 ```
-https://gettreehouse.app/join/?utm_source=<平台>&utm_medium=<類型>&utm_campaign=<期間>&utm_content=<這篇貼文的代稱>
+https://gettreehouse.app/join/?utm_source=<平台>&utm_medium=<類型>&utm_campaign=<這一波>&utm_content=<這篇貼文的代稱>
 ```
 
 | 參數 | 怎麼填 | 說明 |
 |---|---|---|
 | `utm_source` | `threads` / `ig` / `line` | 貼在哪個平台。工具的下拉選單就是這個 |
 | `utm_medium` | 由 source 自動決定 | threads、ig → `social`；line → `message`。不用自己選 |
-| `utm_campaign` | `beta_recruit_join` | 這一波招募固定用這個，換波才換（見下方「什麼時候該換 campaign」） |
-| `utm_content` | 自己取 | **唯一每篇都要換的東西**，用來分辨是哪一篇貼文 |
+| `utm_campaign` | `beta_recruit_join` | 這一波招募固定用這個，換波才換（見第三節） |
+| `utm_content` | `MMDD` + `d` + 第幾天 | **唯一每篇要換的東西**。工具會自動帶 |
+
+### `utm_content` 的格式
+
+```
+0820d1      8/20，招募第 1 天
+0821d2      8/21，第 2 天
+0827d8      8/27，第 8 天（公測開始那天）
+```
+
+前面是月日（`MMDD`），後面是招募第幾天。**第一天是 2026-08-20**。
+
+同一天發第二篇就在後面加字母：
+
+```
+0820d1      當天第一篇
+0820d1b     當天第二篇
+0820d1c     當天第三篇
+```
 
 ### 硬規則（違反了數字就對不上）
 
-1. **全部小寫。** 程式是把網址上的參數名稱**原樣**抄進 GA4，不會自動修正大小寫。
-   寫成 `utm_Source` 的話，GA4 那邊註冊的維度是 `utm_source`，就對不上、查不到值。
-2. **只用英數字、底線、連字號。** 不要有空格、中文、`?`、`&`、emoji。
-3. **`utm_content` 每篇貼文都要不一樣。** 兩篇用同一個代稱，數據會被合併在一起，
-   分不出來哪篇有效。
+1. **全部小寫。** 程式把網址上的參數**原樣**送進 GA4，不做大小寫正規化。
+   寫成 `utm_Source` 的話，GA4 後台註冊的維度是 `utm_source`，就對不上、查不到值。
+   （工具會自動轉小寫，手打才要注意。）
+2. **只用英數字。** 不要有空格、中文、`?`、`&`、emoji。
+3. **每篇的 `utm_content` 都要不一樣。** 兩篇用同一個代稱，數據會被合併，
+   分不出哪篇有效。
 4. **代稱一旦用出去就不要改。** 改了等於變成新的一篇，前後數據接不起來。
 
 ---
 
-## 二、`utm_content` 怎麼取
+## 二、範例
 
-格式：`d<第幾天>_<主題>`，需要同一天發多篇同主題時後面加序號。
+**今晚（2026-08-20，d1）發 Threads：**
 
 ```
-d1_intro          第一天，介紹型貼文
-d1_intro_b        同一天同主題的第二篇（A/B 測試或補發）
-d2_howitworks     第二天，講玩法
-d3_gender         第三天，講性別平衡機制
-d4_founder        第四天，創辦人視角／幕後
-d5_lastcall       最後一天，催報名
+https://gettreehouse.app/join/?utm_source=threads&utm_medium=social&utm_campaign=beta_recruit_join&utm_content=0820d1
 ```
 
-「第幾天」從**招募開始那天**算 d1，不是從月初算。這一波 d1 = 2026-08-20。
+**同一晚再發一篇：**
 
-主題用一兩個英文字，看得懂就好，不用嚴謹。常用的：
+```
+https://gettreehouse.app/join/?utm_source=threads&utm_medium=social&utm_campaign=beta_recruit_join&utm_content=0820d1b
+```
 
-| 代稱 | 用在哪種貼文 |
-|---|---|
-| `intro` | 這是什麼 App、介紹 |
-| `howitworks` | 玩法、三回合、話題卡 |
-| `gender` | 性別平衡機制 |
-| `founder` | 創辦人視角、為什麼做這個、幕後 |
-| `story` | 使用者故事、體驗心得 |
-| `update` | 進度更新、bug 修正、數字回報 |
-| `lastcall` | 催報名、倒數 |
-| `pricing` | 付費揭露相關（Public Release 才會用到） |
+**明天（8/21，d2）：**
+
+```
+https://gettreehouse.app/join/?utm_source=threads&utm_medium=social&utm_campaign=beta_recruit_join&utm_content=0821d2
+```
+
+**LINE 官方帳號群發：**
+
+```
+https://gettreehouse.app/join/?utm_source=line&utm_medium=message&utm_campaign=beta_recruit_join&utm_content=0820d1
+```
+
+（不同平台可以用同一個 `utm_content`，因為 `utm_source` 已經分得開。）
 
 ---
 
@@ -68,40 +87,19 @@ d5_lastcall       最後一天，催報名
 
 `utm_campaign` 是「這一波在做什麼」，不是「哪一篇」。目前只有一個值：
 
-- `beta_recruit_join` —— Beta 招募（2026-08-20 起到公測開始）
+- `beta_recruit_join` —— Beta 招募（2026-08-20 起）
 
 之後要換的時機：
 
 - 進 Public Release、CTA 從表單改成商店連結時 → 換成 `public_release`
 - 之後有獨立的推廣檔期（例如投廣告） → 另外開一個，例如 `ads_2026q4`
 
-換 campaign 之後，`utm_content` 的 `d<n>` 重新從 d1 算起。
+換 campaign 時，**同時改 `join/utm-tool/index.html` 裡的 `CAMPAIGN` 與 `CAMPAIGN_START`**，
+天數會重新從 d1 算起。
 
 ---
 
-## 四、範例
-
-**今晚（2026-08-20，d1）發 Threads 的第一篇：**
-
-```
-https://gettreehouse.app/join/?utm_source=threads&utm_medium=social&utm_campaign=beta_recruit_join&utm_content=d1_intro
-```
-
-**同一晚再發一篇講玩法的：**
-
-```
-https://gettreehouse.app/join/?utm_source=threads&utm_medium=social&utm_campaign=beta_recruit_join&utm_content=d1_howitworks
-```
-
-**LINE 官方帳號發給已加好友的人：**
-
-```
-https://gettreehouse.app/join/?utm_source=line&utm_medium=message&utm_campaign=beta_recruit_join&utm_content=d1_broadcast
-```
-
----
-
-## 五、怎麼看成效
+## 四、怎麼看成效
 
 GA4 → 事件 `cta_click`，用 `utm_content` 拆分，就是每篇貼文各帶進多少次「我要報名」點擊。
 `page_view` 同樣可以拆，兩者相除是該篇的點擊轉換率。
@@ -115,7 +113,7 @@ GA4 → 事件 `cta_click`，用 `utm_content` 拆分，就是每篇貼文各帶
 
 ---
 
-## 六、注意事項
+## 五、注意事項
 
 - **不帶 UTM 直接進 `/join/` 不會壞**，只是那次流量在報表裡歸在「直接／未知來源」，
   分不出是哪來的。所以貼文連結一律帶。
@@ -126,4 +124,5 @@ GA4 → 事件 `cta_click`，用 `utm_content` 拆分，就是每篇貼文各帶
 
 ---
 
-最後更新：2026-08-20。規則有變請一起更新 `join/utm-tool/index.html`。
+最後更新：2026-08-20。規則有變請一起更新 `join/utm-tool/index.html`
+（`CAMPAIGN`、`CAMPAIGN_START`、`defaultContent()` 與畫面上的說明文字）。

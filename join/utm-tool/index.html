@@ -55,14 +55,13 @@
 
     <div class="field">
       <label for="content">這篇貼文的代稱</label>
-      <input id="content" type="text" placeholder="d1_intro">
+      <input id="content" type="text">
       <p class="hint hint--field">
-        格式 <code>d&lt;第幾天&gt;_&lt;主題&gt;</code>，招募開始那天算 d1。
-        主題常用：<code>intro</code>、<code>howitworks</code>、<code>gender</code>、
-        <code>founder</code>、<code>story</code>、<code>update</code>、<code>lastcall</code>。
-        同一天同主題發第二篇就加 <code>_b</code>。<br>
-        <strong>每篇都要不一樣</strong>，重複的話數據會被合併、分不出哪篇有效。
-        規則詳見 <code>join/UTM_RULES.md</code>。
+        已依今天日期自動帶入，格式 <code>MMDD</code> + <code>d</code> + 第幾天，
+        招募開始那天是 d1。<br>
+        同一天發第二篇請在後面加 <code>b</code>、第三篇 <code>c</code>（例如
+        <code id="egB">0820d1b</code>）—— <strong>每篇都要不一樣</strong>，
+        重複的話兩篇數據會被合併、分不出哪篇有效。
       </p>
     </div>
 
@@ -80,13 +79,32 @@
       // 平台 -> utm_medium 對照，貼文平台已經在下拉選單裡了，不用另外選 medium
       var MEDIUM_BY_SOURCE = { threads: "social", ig: "social", line: "message" };
 
+      // 招募第一天（d1）。換下一波活動時連同 CAMPAIGN 一起改，天數會重新從 d1 算。
+      var CAMPAIGN_START = "2026-08-20";
+
+      // 代稱＝ MMDD + d + 第幾天，例如 0820d1、0821d2。
+      // 用當地時間的年月日組出 Date 再相減，避免直接用毫秒差被時區或日光節約影響。
+      function defaultContent() {
+        var s = CAMPAIGN_START.split("-");
+        var start = new Date(+s[0], +s[1] - 1, +s[2]);
+        var now = new Date();
+        var today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        var day = Math.round((today - start) / 86400000) + 1;
+        if (day < 1) day = 1;                       // 活動還沒開始就先當 d1
+        var mm = ("0" + (now.getMonth() + 1)).slice(-2);
+        var dd = ("0" + now.getDate()).slice(-2);
+        return mm + dd + "d" + day;
+      }
+
       var sourceEl = document.getElementById("source");
       var contentEl = document.getElementById("content");
       var resultEl = document.getElementById("resultUrl");
       var copyBtn = document.getElementById("copyBtn");
 
+      // 參數名稱與值都會原樣送進 GA4，所以這裡一律轉小寫並濾掉非英數字元 ——
+      // 大小寫或中文對不上後台註冊的維度就查不到值。
       function slugify(s) {
-        return s.replace(/\s+/g, "_").replace(/[^a-zA-Z0-9_\-一-鿿]/g, "");
+        return s.toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_-]/g, "");
       }
 
       function buildUrl() {
@@ -131,6 +149,11 @@
         try { document.execCommand("copy"); done(); } catch (e) {}
         document.body.removeChild(ta);
       }
+
+      // 開頁就把今天的代稱填好，直接按複製即可；要改（例如同一天第二篇）再自己編輯
+      contentEl.value = defaultContent();
+      var egB = document.getElementById("egB");
+      if (egB) egB.textContent = defaultContent() + "b";
 
       refresh();
     })();
