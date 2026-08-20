@@ -42,6 +42,20 @@
     ga4: mergeSection("ga4")
   };
 
+  // ---- 對稿／預覽開關：?flags=on ----
+  // handoff/ 的三支驗收工具（compare、spec-check、fold-test）都用這個參數載入本頁，
+  // 才量得到三個旗標區塊開啟時的版面。只吃網址參數，不動 join.config.js，
+  // 正式流量沒有這個參數 = 完全沒有作用。
+  if (/[?&]flags=on(&|$)/.test(location.search)) {
+    CFG.genderRatio.enabled = true;
+    CFG.pricing.enabled = true;
+    CFG.countdown.enabled = true;
+    if (!CFG.countdown.targetIso) {
+      // 對稿只需要「有東西可以顯示」，給一個固定偏移的假目標日
+      CFG.countdown.targetIso = new Date(Date.now() + ((32 * 24 + 8) * 60 + 14) * 60000 + 27000).toISOString();
+    }
+  }
+
   window.__JOIN_DEBUG__ = { config: CFG, lastGoodFetch: {}, lastError: {} };
 
   var reduceMotion = !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
@@ -209,30 +223,51 @@
   }
 
   // =========================================================================
-  // 報名人數計數動畫 — 取消前一個動畫、從目前顯示值算起、reduced-motion 直接跳終值
+  // 報名人數 — 五位計數器（設計稿的 odometer 造型）
+  //
+  // ⚠ 不可以用 textContent 寫整個 #signupNumber：那個元素底下是五個
+  // <b class="odo__d"> 位數格，整個覆蓋會把位數格清掉，看板就塌了。
+  // 一律補零成 5 碼後「逐位」寫入，並依實際位數 toggle .odo__d--lead
+  // （前導零淡化）。位數固定 5（上限 99999）。
   // =========================================================================
   var countAnim = { raf: null, from: CFG.signup.baseValue };
 
-  function formatNumber(n) {
+  function normalizeCount(n) {
     if (CFG.signup.round === "floor") n = Math.floor(n);
-    try { return n.toLocaleString("zh-TW"); } catch (e) { return String(n); }
+    return Math.max(0, n);
+  }
+
+  function paintOdometer(el, value) {
+    var digits = el.querySelectorAll(".odo__d");
+    if (!digits.length) { el.textContent = String(value); return; } // 舊版 DOM 的退路
+    var raw = String(normalizeCount(value));
+    var str = raw.length >= digits.length
+      ? raw.slice(-digits.length)
+      : new Array(digits.length - raw.length + 1).join("0") + raw;
+    var leadCount = digits.length - Math.min(raw.length, digits.length);
+    for (var i = 0; i < digits.length; i++) {
+      digits[i].textContent = str.charAt(i);
+      if (i < leadCount) digits[i].classList.add("odo__d--lead");
+      else digits[i].classList.remove("odo__d--lead");
+    }
+    el.setAttribute("data-value", String(normalizeCount(value)));
   }
 
   function animateCountTo(el, target) {
     if (countAnim.raf) { cancelAnimationFrame(countAnim.raf); countAnim.raf = null; }
     if (reduceMotion) {
-      el.textContent = formatNumber(target);
+      paintOdometer(el, target);
       countAnim.from = target;
       return;
     }
     var from = countAnim.from;
     var start = null;
-    var duration = 700;
+    var duration = 900;
     function step(ts) {
       if (start === null) start = ts;
       var p = Math.min(1, (ts - start) / duration);
       var eased = 1 - Math.pow(1 - p, 3);
-      el.textContent = formatNumber(from + (target - from) * eased);
+      paintOdometer(el, from + (target - from) * eased);
       if (p < 1) {
         countAnim.raf = requestAnimationFrame(step);
       } else {
@@ -280,95 +315,124 @@
   }
 
   // =========================================================================
-  // 輪播 — scroll-snap 原生手勢／滑鼠拖曳；本檔只負責箭頭、圓點、IO 對位、事件
+  // 怎麼玩輪播 — IG Story 式滿版 reel
+  //
+  // #howTrack 不再是 overflow-x 捲動容器，而是 transform: translateX() 驅動的
+  // reel；#howDots 內容是四段進度條，不是圓點按鈕。
+  //
+  // 無限循環的做法：DOM 上放三份複本，指標永遠停在中間那一份，動畫結束時
+  // 靜默把指標拉回中段（加 .is-static 拿掉 transition，所以看不出跳接）。
+  // 兩個方向都能一直滑，第一張往左會接到第四張。
+  //
+  // 自動輪播每張停 7 秒，頂部進度條同步跑滿。按住／拖曳中、分頁在背景
+  // （document.hidden）、prefers-reduced-motion 三種情況都不自動前進。
   // =========================================================================
   function initCarousel() {
-    var track = document.getElementById("howTrack");
-    var dotsWrap = document.getElementById("howDots");
-    if (!track || !dotsWrap) return;
+    var reel = document.getElementById("howTrack");
+    var bars = document.getElementById("howDots");
+    if (!reel) return;
 
-    var slides = Array.prototype.slice.call(track.querySelectorAll(".how__slide"));
-    var dots = Array.prototype.slice.call(dotsWrap.querySelectorAll("button"));
-    var current = 0;
+    var DWELL = 7000;   // 每張停留時間，比照 Instagram 照片故事
+    var TICK = 50;      // 進度條更新間隔
+
+    var base = Array.prototype.slice.call(reel.children);
+    var N = base.length;
+    if (!N) return;
+    // 前後各補一份複本，指標起點停在中段
+    base.forEach(function (n) { reel.appendChild(n.cloneNode(true)); });
+    base.forEach(function (n) { reel.appendChild(n.cloneNode(true)); });
+
+    var idx = N;
+    var drag = null;
+    var prog = 0;
     var interacted = false;
 
     function markInteracted() {
       if (!interacted) { interacted = true; gaSafe("event", "how_it_works_interact"); }
     }
 
-    function setActive(i) {
-      current = i;
-      for (var d = 0; d < dots.length; d++) {
-        var active = d === i;
-        dots[d].setAttribute("aria-current", active ? "true" : "false");
-        if (active) dots[d].classList.add("is-active"); else dots[d].classList.remove("is-active");
-      }
+    function active() { return ((idx % N) + N) % N; }
+
+    function paintBars() {
+      if (!bars) return;
+      var a = active();
+      Array.prototype.forEach.call(bars.children, function (s, i) {
+        var fill = s.firstElementChild;
+        if (!fill) return;
+        fill.style.width = i < a ? "100%" : i === a ? (prog * 100).toFixed(1) + "%" : "0%";
+      });
     }
 
-    // 只動輪播容器自己的水平捲軸。不要用 scrollIntoView——即使給 block:"nearest"，
-    // 當投影片比視窗高（手機上就是這樣）瀏覽器仍會連帶垂直捲動整個頁面，
-    // 載入當下就把品牌／slogan 推出首屏，違反「首屏四元素免捲動」的硬限制。
-    function centerSlide(i, smooth) {
-      var target = slides[i];
-      if (!target) return;
-      var tRect = track.getBoundingClientRect();
-      var sRect = target.getBoundingClientRect();
-      var left = track.scrollLeft + (sRect.left - tRect.left) - (tRect.width - sRect.width) / 2;
-      if (track.scrollTo) {
-        track.scrollTo({ left: left, behavior: smooth && !reduceMotion ? "smooth" : "auto" });
-      } else {
-        track.scrollLeft = left;
-      }
+    function paint(dx) {
+      reel.style.transform = "translateX(calc(" + (-idx * 100) + "% + " + (dx || 0) + "px))";
+      paintBars();
     }
 
-    function goTo(i, userInitiated) {
-      i = Math.max(0, Math.min(slides.length - 1, i));
+    function goStep(dir, userInitiated) {
       if (userInitiated) markInteracted();
-      centerSlide(i, true);
-      setActive(i);
+      reel.classList.remove("is-static");
+      idx += dir;
+      prog = 0;
+      paint(0);
     }
 
-    for (var i = 0; i < dots.length; i++) {
-      (function (idx) {
-        dots[idx].addEventListener("click", function () { goTo(idx, true); });
-      })(i);
-    }
+    reel.addEventListener("transitionend", function () {
+      if (idx >= N && idx < N * 2) return;   // 還在中段，不用回中
+      reel.classList.add("is-static");
+      idx = N + active();
+      paint(0);
+    });
 
     var prevBtn = document.querySelector(".how__arrow--prev");
     var nextBtn = document.querySelector(".how__arrow--next");
-    if (prevBtn) prevBtn.addEventListener("click", function () { goTo(current - 1, true); });
-    if (nextBtn) nextBtn.addEventListener("click", function () { goTo(current + 1, true); });
+    if (prevBtn) prevBtn.addEventListener("click", function () { goStep(-1, true); });
+    if (nextBtn) nextBtn.addEventListener("click", function () { goStep(1, true); });
 
-    track.addEventListener("keydown", function (ev) {
-      if (ev.key === "ArrowRight") { goTo(current + 1, true); ev.preventDefault(); }
-      else if (ev.key === "ArrowLeft") { goTo(current - 1, true); ev.preventDefault(); }
+    var stage = reel.parentNode;
+    stage.addEventListener("keydown", function (ev) {
+      if (ev.key === "ArrowRight") { goStep(1, true); ev.preventDefault(); }
+      else if (ev.key === "ArrowLeft") { goStep(-1, true); ev.preventDefault(); }
     });
 
-    track.addEventListener("touchstart", markInteracted, { passive: true, once: true });
-    track.addEventListener("wheel", markInteracted, { passive: true, once: true });
+    stage.addEventListener("pointerdown", function (ev) {
+      if (ev.button > 0) return;
+      drag = ev.clientX;
+      reel.classList.add("is-static");
+    });
+    stage.addEventListener("pointermove", function (ev) {
+      if (drag !== null) paint(ev.clientX - drag);
+    });
+    stage.addEventListener("pointerup", function (ev) {
+      if (drag === null) return;
+      var dx = ev.clientX - drag;
+      drag = null;
+      reel.classList.remove("is-static");
+      if (dx < -56) goStep(1, true);
+      else if (dx > 56) goStep(-1, true);
+      else paint(0);
+    });
+    stage.addEventListener("pointercancel", function () {
+      drag = null;
+      reel.classList.remove("is-static");
+      paint(0);
+    });
 
-    if ("IntersectionObserver" in window) {
-      // 記每張圖目前的可見比例，取「最高」那張當作 active，不是「最後一個
-      // callback 剛好回報誰」——寬螢幕桌機一次可以看到 2-3 張，只看最後一筆
-      // 容易選到不是視覺上最主要的那張。
-      var ratios = new Array(slides.length).fill(0);
-      var io = new IntersectionObserver(function (entries) {
-        for (var e = 0; e < entries.length; e++) {
-          var idx = slides.indexOf(entries[e].target);
-          if (idx !== -1) ratios[idx] = entries[e].isIntersecting ? entries[e].intersectionRatio : 0;
-        }
-        var best = 0;
-        for (var r = 1; r < ratios.length; r++) { if (ratios[r] > ratios[best]) best = r; }
-        if (ratios[best] > 0) setActive(best);
-      }, { root: track, threshold: [0, 0.25, 0.5, 0.6, 0.75, 0.9, 1] });
-      for (var s = 0; s < slides.length; s++) io.observe(slides[s]);
+    // 首次定位不要有滑動動畫，下一幀才把 transition 接回來
+    reel.classList.add("is-static");
+    paint(0);
+    requestAnimationFrame(function () { reel.classList.remove("is-static"); });
+
+    if (reduceMotion) {
+      prog = 1;
+      paintBars();
+      return;
     }
-
-    // 初始定位交給 JS 明確對齊（不依賴瀏覽器在 scrollLeft:0 時是否已套用
-    // scroll-snap-align:center——實測不同瀏覽器在載入當下對這點行為不一致，
-    // 明確對齊一次才能保證兩側露邊在首次載入就對稱、可靠）。
-    centerSlide(0, false);
-    setActive(0);
+    setInterval(function () {
+      if (document.hidden || drag !== null) return;
+      prog += TICK / DWELL;
+      if (prog >= 1) { goStep(1, false); return; }
+      paintBars();
+    }, TICK);
   }
 
   // =========================================================================
@@ -378,7 +442,7 @@
     loadGA4();
 
     var numberEl = document.getElementById("signupNumber");
-    if (numberEl) numberEl.textContent = formatNumber(CFG.signup.baseValue);
+    if (numberEl) paintOdometer(numberEl, CFG.signup.baseValue);
 
     function refreshSignup() {
       fetchSignupCount()
@@ -420,25 +484,52 @@
       if (toggle && body) {
         var expandedOnce = false;
         toggle.addEventListener("click", function () {
+          // 收合由 CSS 負責（.pricing__toggle[aria-expanded="false"] + .pricing__body
+          // { display: none }），這裡只切 aria-expanded，不要再另外動 hidden 屬性，
+          // 免得兩套機制各記一半狀態。
           var open = toggle.getAttribute("aria-expanded") === "true";
           toggle.setAttribute("aria-expanded", open ? "false" : "true");
-          body.hidden = open;
           if (!open && !expandedOnce) { expandedOnce = true; gaSafe("event", "pricing_expand"); }
         });
       }
     }
 
+    // ---- 倒數：dd : hh : mm : ss，每秒更新 ----
+    // 兩個狀態共用同一個旗標：公測開始前顯示 #countdownSection，left <= 0
+    // 之後改顯示 #countdownLive（「測試進行中」）。旗標關掉時兩塊都不顯示。
     var countdownSection = document.getElementById("countdownSection");
+    var countdownLive = document.getElementById("countdownLive");
     if (CFG.countdown.enabled && CFG.countdown.targetIso && countdownSection) {
-      countdownSection.hidden = false;
-      var daysEl = document.getElementById("countdownDays");
+      var targetMs = new Date(CFG.countdown.targetIso).getTime();
+      var cdDays = document.getElementById("countdownDays");
+      var cdHours = document.getElementById("countdownHours");
+      var cdMinutes = document.getElementById("countdownMinutes");
+      var cdSeconds = document.getElementById("countdownSeconds");
+      var cdTimer = null;
+
+      function pad2(n) { return (n < 10 ? "0" : "") + n; }
+
       function tickCountdown() {
-        var diff = new Date(CFG.countdown.targetIso).getTime() - Date.now();
-        var days = Math.max(0, Math.ceil(diff / 86400000));
-        if (daysEl) daysEl.textContent = String(days);
+        var left = targetMs - Date.now();
+        if (!isFinite(targetMs)) return;              // targetIso 打錯就兩塊都不顯示
+        if (left <= 0) {
+          countdownSection.hidden = true;
+          if (countdownLive) countdownLive.hidden = false;
+          if (cdTimer) { clearInterval(cdTimer); cdTimer = null; }
+          return;
+        }
+        countdownSection.hidden = false;
+        if (countdownLive) countdownLive.hidden = true;
+        var sec = Math.floor(left / 1000);
+        // 天數不補零，時／分／秒補零
+        if (cdDays) cdDays.textContent = String(Math.floor(sec / 86400));
+        if (cdHours) cdHours.textContent = pad2(Math.floor(sec / 3600) % 24);
+        if (cdMinutes) cdMinutes.textContent = pad2(Math.floor(sec / 60) % 60);
+        if (cdSeconds) cdSeconds.textContent = pad2(sec % 60);
       }
+
       tickCountdown();
-      setInterval(tickCountdown, 60000);
+      cdTimer = setInterval(tickCountdown, 1000);
     }
 
     var cta = document.getElementById("ctaButton");

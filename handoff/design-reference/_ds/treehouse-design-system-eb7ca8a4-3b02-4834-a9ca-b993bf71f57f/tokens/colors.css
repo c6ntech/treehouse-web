@@ -1,0 +1,90 @@
+/* Treehouse colour system — values transcribed verbatim from the Figma file.
+   fig-tokens.css carries the raw Figma Variables; this file adds the brand-level
+   base ramp and semantic aliases the variables do not cover (sky gradients,
+   wood/skin surfaces, glass fills, shadows). */
+:root{
+  /* ── Base: wood & skin (the warm, daytime side of the brand) ── */
+  --wood-900:rgb(35,24,21);
+  --wood-800:rgb(117,50,23);
+  --wood-700:rgb(121,58,13);   /* primary brand brown — text, icons, filled buttons */
+  --wood-600:rgb(142,109,78);
+  --wood-500:rgb(170,107,63);
+  --wood-400:rgb(197,144,104);
+  --wood-300:rgb(223,163,68);  /* secondary / accent amber */
+  --wood-200:rgb(238,207,166);
+  --wood-100:rgb(242,229,217); /* deep skin — bars, sunken cards */
+  --wood-50:rgb(252,244,236);  /* skin — the default app canvas */
+  --wood-25:rgb(246,234,221);
+
+  /* ── Base: neutrals ── */
+  --ink-900:rgb(0,0,0);
+  --ink-800:rgb(42,42,42);
+  --ink-700:rgb(51,51,51);
+  --ink-600:rgb(102,102,102);
+  --ink-400:rgb(153,153,153);
+  --ink-300:rgb(204,204,204);
+  --ink-200:rgb(238,238,238);
+  --ink-0:rgb(255,255,255);
+
+  /* ── Base: sky (the night-time side — the “outside the treehouse” world) ── */
+  --sky-midnight:rgb(6,6,36);
+  --sky-dusk-deep:rgb(5,14,44);
+  --sky-navy:rgb(13,61,122);
+  --sky-blue:rgb(96,119,180);
+  --sky-day:rgb(129,166,217);
+  --sky-dawn:rgb(140,170,224);
+  --sky-haze:rgb(251,251,253);
+  --sky-sand:rgb(253,227,176);
+  --sky-mauve:rgb(189,158,184);
+  --sky-peach:rgb(253,182,137);
+  --sky-orange:rgb(254,144,57);
+  --sky-ember:rgb(235,69,31);
+  --sky-lilac:rgb(174,165,212);
+
+  /* ── Semantic: text & icon ── */
+  --text-primary:var(--wood-700);
+  --text-dark:var(--ink-800);
+  --text-medium:var(--ink-600);
+  --text-light:var(--ink-400);
+  --text-secondary:var(--wood-300);
+  --text-on-dark:var(--ink-0);
+  --text-on-dark-muted:var(--ink-200);
+
+  /* ── Semantic: surfaces ── */
+  --surface-canvas:var(--wood-50);
+  --surface-sunken:var(--wood-100);
+  --surface-card:var(--ink-0);
+  --surface-glass:rgba(255,255,255,0.5);
+  --surface-glass-strong:rgba(255,255,255,0.3);
+  --surface-glass-night:rgba(255,255,255,0.06);
+  --surface-glass-lilac:rgba(174,165,212,0.3);
+  --surface-scrim:rgba(0,0,0,0.3);
+
+  /* ── Semantic: lines ── */
+  --border-hairline:var(--ink-200);
+  --border-wood:rgb(142,109,78);
+  --border-field:rgba(121,58,13,0.3);
+  --border-focus:var(--wood-700);
+
+  /* ── Semantic: state ── */
+  --state-destructive:rgb(185,28,28);
+  --state-ok:rgb(22,101,52);
+  --state-alert:rgb(234,56,41);
+
+  /* ── Elevation ── */
+  --shadow-warm:0px 4px 4px 0px rgba(121,58,13,0.1);
+  --shadow-card:0px 4px 4px 0px rgba(0,0,0,0.05);
+  --shadow-inset-roof:inset 0px 6px 4px 0px rgba(0,0,0,0.2);
+
+  /* ── Sky gradients: the home screen repaints itself four times a day ── */
+  --sky-dawn-gradient:linear-gradient(180deg,rgb(140,170,224) 0%,rgb(253,227,176) 100%); /* @kind color */
+  --sky-day-gradient:linear-gradient(180deg,rgb(129,166,217) 0%,rgb(251,251,253) 100%); /* @kind color */
+  --sky-dusk-gradient:linear-gradient(180deg,rgb(13,61,122) 17.31%,rgb(96,119,180) 55.29%,rgb(189,158,184) 77.88%,rgb(217,92,38) 87.02%); /* @kind color */
+  --sky-night-gradient:linear-gradient(180deg,rgb(6,6,36) 0%,rgb(13,61,122) 44.23%,rgb(96,119,180) 100%); /* @kind color */
+  /* full-screen variants layer a fade over the sky so the nav bar stays legible */
+  --sky-dawn-screen:linear-gradient(180deg,rgba(255,255,255,0) 10%,rgb(255,255,255) 100%),linear-gradient(180deg,rgb(140,170,224) 0%,rgb(253,227,176) 100%); /* @kind color */
+  --sky-day-screen:linear-gradient(180deg,rgba(255,255,255,0) 10%,rgba(255,255,255,0.2) 100%),linear-gradient(180deg,rgb(129,166,217) 0%,rgb(251,251,253) 100%); /* @kind color */
+  --sky-dusk-screen:linear-gradient(180deg,rgba(255,255,255,0) 10%,rgb(255,255,255) 100%),linear-gradient(180deg,rgb(5,14,44) 0%,rgb(13,61,122) 24.04%,rgb(96,119,180) 48.08%,rgb(189,158,184) 61.06%,rgb(253,182,137) 76.92%,rgb(254,144,57) 91.35%,rgb(235,69,31) 100%); /* @kind color */
+  --sky-night-screen:linear-gradient(180deg,rgba(0,0,0,0) 10%,rgb(0,0,0) 100%),linear-gradient(180deg,rgb(6,6,36) 0%,rgb(13,61,122) 44.23%,rgb(96,119,180) 100%); /* @kind color */
+  --wood-gradient:linear-gradient(180deg,rgb(197,144,104) 0%,rgb(170,107,63) 37.4%,rgb(170,107,63) 100%); /* @kind color */
+}

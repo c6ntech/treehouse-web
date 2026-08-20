@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="stylesheet" href="_ds/treehouse-design-system-eb7ca8a4-3b02-4834-a9ca-b993bf71f57f/tokens/fonts.css">
+<link rel="stylesheet" href="_ds/treehouse-design-system-eb7ca8a4-3b02-4834-a9ca-b993bf71f57f/tokens/colors.css">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chiron+Sung+HK:wght@400;600;700&display=swap">
+<script src="_ds/treehouse-design-system-eb7ca8a4-3b02-4834-a9ca-b993bf71f57f/_ds_bundle.js"></script>
+<style>
+  body { margin: 0; background: #DAD3CA; }
+  a { color: #793A0D; }
+  a:hover { color: #AA6B3F; }
+  #howTrack::-webkit-scrollbar { display: none; }
+  @keyframes th-breathe { 0%, 100% { opacity: 1 } 50% { opacity: 0.55 } }
+  @keyframes th-ring { 0% { transform: scale(1); opacity: 0.55 } 70%, 100% { transform: scale(2.8); opacity: 0 } }
+  @keyframes th-tap { 0%, 66%, 100% { opacity: 0.28; transform: translateX(0) } 80% { opacity: 0.72; transform: translateX(5px) } }
+  /* 無縫循環：色層寬 300%（三個完整週期），每輪剛好平移一個週期，
+     頭尾顏色相同所以看不出接點；linear 且不反向，不會有「重播」感。 */
+  @keyframes th-drift-in  { from { transform: translateX(0) } to { transform: translateX(33.3333%) } }
+  @keyframes th-drift-out { from { transform: translateX(0) } to { transform: translateX(-33.3333%) } }
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important } }
+</style>
+</helmet>
+
+<section style="display:flex;flex-direction:column;gap:56px;padding:72px;font-family:'Noto Sans TC',sans-serif">
+
+  <div style="display:flex;flex-direction:column;gap:12px;max-width:1180px">
+    <div style="font-size:34px;line-height:46px;font-weight:700;color:#3A2E22">Treehouse <span style="font-family:ui-monospace,monospace;font-size:30px">/join</span> · Beta 招募轉換頁</div>
+    <div style="font-size:21px;line-height:36px;color:#5C4B3A">視覺沿用你選定的 store image 一：夜空→晚霞漸層、星空、森林剪影。全頁走設計系統的「兩個世界」——<b>首屏是窗外的天空</b>（等待、招募），<b>捲下去是屋內的米色</b>（閱讀、說明）。交接單列的 id 全部保留在原本的元素上，旗標關閉的三區以「旗標開啟時長這樣」呈現。</div>
+  </div>
+
+  <div style="display:flex;gap:72px;align-items:flex-start">
+
+    <!-- ════════ 手機版 390px ════════ -->
+    <div style="display:flex;flex-direction:column;gap:20px">
+      <div style="display:flex;align-items:baseline;gap:14px">
+        <div style="background:#793A0D;color:#FCF4EC;border-radius:8px;padding:5px 15px;font-size:20px;font-weight:700">手機 390px</div>
+        <div style="font-size:22px;line-height:32px;color:#4A3B2C">首屏 844 內含品牌／slogan／副標／人數看板／單一 CTA</div>
+      </div>
+
+      <div style="width:390px;background:#FCF4EC;box-shadow:0 40px 90px rgba(58,46,34,0.28);font-size:16px;color:#2A2A2A">
+
+        <!-- ─── 首屏 ─── -->
+        <div style="position:relative;width:390px;height:844px;overflow:hidden;background:#060624">
+          <div style="position:absolute;inset:0;background:linear-gradient(180deg,#060624 0%,#0A2B5C 22%,#0D3D7A 38%,#3E5A94 56%,#7A7CAA 70%,#BD9EB8 82%,#D95C26 93%,#EFA36B 100%)"></div>
+          <div style="position:absolute;left:0;right:0;top:0;height:470px;background-image:url(assets/starfield.png);background-size:390px 640px;background-position:0 -10px;background-repeat:no-repeat;opacity:0.9"></div>
+          <div style="position:absolute;left:0;right:0;bottom:0;height:300px;overflow:hidden;-webkit-mask-image:linear-gradient(180deg,rgba(0,0,0,0) 0px,rgba(0,0,0,1) 90px);mask-image:linear-gradient(180deg,rgba(0,0,0,0) 0px,rgba(0,0,0,1) 90px)">
+            <img src="assets/forest-trees.svg" alt="" style="position:absolute;left:50%;margin-left:-350px;bottom:-308px;width:700px;height:700px;opacity:0.95;filter:brightness(0.62) saturate(0.55)">
+            <div style="position:absolute;left:0;right:0;bottom:0;height:26px;background:linear-gradient(180deg,rgba(11,10,18,0) 0%,rgba(11,10,18,0.42) 100%)"></div>
+          </div>
+
+          <div style="position:absolute;left:0;right:0;top:0;bottom:0;display:flex;flex-direction:column;align-items:center;padding:58px 24px 40px;box-sizing:border-box">
+            <div style="font-family:'Caprasimo',serif;font-size:62px;line-height:1;letter-spacing:-0.062em;color:#FCF4EC;white-space:nowrap;text-shadow:0 4px 26px rgba(6,6,36,0.45)">treehouse</div>
+            <div style="font-family:'Chiron Sung HK',serif;font-weight:700;font-size:27px;line-height:1.24;letter-spacing:0.02em;color:#FFFFFF;margin-top:26px;white-space:nowrap;text-shadow:0 2px 14px rgba(6,6,36,0.55)">每晚10點，認真聊天</div>
+            <div style="font-family:'Chiron Sung HK',serif;font-weight:400;font-size:15px;line-height:1.5;letter-spacing:0.15em;color:rgba(255,255,255,0.85);margin-top:12px;white-space:nowrap">純文字｜全匿名｜三個回合</div>
+
+            <div style="flex:0 1 auto;min-height:34px"></div>
+
+            <sc-if value="{{ cdBefore }}" hint-placeholder-val="{{ true }}">
+      <div id="countdownSection" style="display:flex;flex-direction:column;align-items:center;gap:12px">
+          <div style="font-size:11px;line-height:16px;letter-spacing:0.16em;color:rgba(255,255,255,0.7);white-space:nowrap;text-shadow:0 2px 12px rgba(6,6,36,0.6)">距離公測開始還有</div>
+          <div style="display:flex;align-items:flex-end;justify-content:space-between;width:320px;box-sizing:border-box;padding:11px 22px;border-radius:20px;background:rgba(255,255,255,0.1);box-shadow:inset 0 0 0 1px rgba(255,255,255,0.3),0 8px 22px rgba(6,6,36,0.22);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)">
+            <div style="display:flex;flex-direction:column;align-items:center;min-width:auto">
+              <div id="countdownDays" style="font-family:'Chiron Sung HK',serif;font-weight:700;font-size:26px;line-height:1.04;color:rgba(255,255,255,0.94);font-variant-numeric:tabular-nums">32</div>
+              <div style="font-size:10px;line-height:14px;letter-spacing:0.1em;color:rgba(255,255,255,0.62);margin-top:2px">天</div>
+            </div>
+            <div style="font-family:'Chiron Sung HK',serif;font-weight:700;font-size:19px;line-height:1.04;color:rgba(255,255,255,0.36);padding-bottom:15px">:</div>
+            <div style="display:flex;flex-direction:column;align-items:center;min-width:auto">
+              <div id="countdownHours" style="font-family:'Chiron Sung HK',serif;font-weight:700;font-size:26px;line-height:1.04;color:rgba(255,255,255,0.94);font-variant-numeric:tabular-nums">08</div>
+              <div style="font-size:10px;line-height:14px;letter-spacing:0.1em;color:rgba(255,255,255,0.62);margin-top:2px">時</div>
+            </div>
+            <div style="font-family:'Chiron Sung HK',serif;font-weight:700;font-size:19px;line-height:1.04;color:rgba(255,255,255,0.36);padding-bottom:15px">:</div>
+            <div style="display:flex;flex-direction:column;align-items:center;min-width:auto">
+              <div id="countdownMinutes" style="font-family:'Chiron Sung HK',serif;font-weight:700;font-size:26px;line-height:1.04;color:rgba(255,255,255,0.94);font-variant-numeric:tabular-nums">14</div>
+              <div style="font-size:10px;line-height:14px;letter-spacing:0.1em;color:rgba(255,255,255,0.62);margin-top:2px">分</div>
+            </div>
+            <div style="font-family:'Chiron Sung HK',serif;font-weight:700;font-size:19px;line-height:1.04;color:rgba(255,255,255,0.36);padding-bottom:15px">:</div>
+            <div style="display:flex;flex-direction:column;align-items:center;min-width:auto">
+              <div id="countdownSeconds" style="font-family:'Chiron Sung HK',serif;font-weight:700;font-size:26px;line-height:1.04;color:rgba(255,255,255,0.94);font-variant-numeric:tabular-nums">27</div>
+              <div style="font-size:10px;line-height:14px;letter-spacing:0.1em;color:rgba(255,255,255,0.62);margin-top:2px">秒</div>
+            </div>
+          </div>
+        </div>
+            </sc-if>
+
+            <sc-if value="{{ cdLive }}" hint-placeholder-val="{{ false }}">
+              <div id="countdownLive" style="display:flex;flex-direction:column;align-items:center;gap:12px">
+                <div style="font-size:12px;line-height:18px;letter-spacing:0.16em;color:rgba(255,255,255,0.82);white-space:nowrap;text-shadow:0 2px 12px rgba(6,6,36,0.6)">公測已經開始</div>
+                <div style="display:flex;align-items:center;gap:14px;padding:16px 26px;border-radius:20px;background:rgba(255,255,255,0.14);box-shadow:inset 0 0 0 1px rgba(255,255,255,0.42),0 4px 4px rgba(121,58,13,0.1),0 10px 30px rgba(6,6,36,0.28);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)">
+                  <div style="flex:none;width:11px;height:11px;border-radius:9999px;background:#8FE3A8;box-shadow:0 0 14px 4px rgba(143,227,168,0.6);animation:th-breathe 2.6s ease-in-out infinite"></div>
+                  <div style="font-family:'Chiron Sung HK',serif;font-weight:700;font-size:26px;line-height:1.2;letter-spacing:0.03em;color:#FFFFFF;white-space:nowrap">測試進行中，手刀快加入！</div>
+                </div>
+              </div>
+            </sc-if>
+
+            <div style="flex:1 1 auto;min-height:34px"></div>
+
+            <!-- 報名人數看板 -->
+            <div style="position:relative;display:flex;flex-direction:column;align-items:center">
+              <div style="position:relative;width:320px;background:#FCF4EC;border-radius:20px;padding:20px 22px 20px;box-sizing:border-box;text-align:center;box-shadow:0 4px 4px rgba(121,58,13,0.1),0 14px 28px rgba(6,6,36,0.3)">
+                <div style="display:flex;align-items:center;justify-content:center">
+                  <div style="position:relative;font-size:13px;line-height:20px;letter-spacing:0.14em;color:#8A5322">
+                    <img src="assets/house-mark.svg" alt="" style="position:absolute;right:100%;top:50%;margin-top:-7px;margin-right:9px;display:block;width:15px;height:15px;opacity:0.8">目前早鳥體驗報名人數
+                  </div>
+                </div>
+                <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-top:8px">
+                  <div id="signupNumber" style="display:flex;gap:6px" data-value="298">
+                    <div style="display:flex;align-items:center;justify-content:center;width:46px;height:68px;border-radius:8px;background:#F6EADD;box-shadow:inset 0 -1px 0 rgba(121,58,13,0.1),inset 0 1px 0 rgba(255,255,255,0.7)"><span style="font-family:'Chiron Sung HK',serif;font-weight:700;font-size:44px;line-height:1;color:rgba(121,58,13,0.26);font-variant-numeric:tabular-nums">0</span></div>
+                    <div style="display:flex;align-items:center;justify-content:center;width:46px;height:68px;border-radius:8px;background:#F6EADD;box-shadow:inset 0 -1px 0 rgba(121,58,13,0.1),inset 0 1px 0 rgba(255,255,255,0.7)"><span style="font-family:'Chiron Sung HK',serif;font-weight:700;font-size:44px;line-height:1;color:rgba(121,58,13,0.26);font-variant-numeric:tabular-nums">0</span></div>
+                    <div style="display:flex;align-items:center;justify-content:center;width:46px;height:68px;border-radius:8px;background:#F2E5D9;box-shadow:inset 0 -1px 0 rgba(121,58,13,0.1),inset 0 1px 0 rgba(255,255,255,0.7)"><span style="font-family:'Chiron Sung HK',serif;font-weight:700;font-size:44px;line-height:1;color:#793A0D;font-variant-numeric:tabular-nums">2</span></div>
+                    <div style="display:flex;align-items:center;justify-content:center;width:46px;height:68px;border-radius:8px;background:#F2E5D9;box-shadow:inset 0 -1px 0 rgba(121,58,13,0.1),inset 0 1px 0 rgba(255,255,255,0.7)"><span style="font-family:'Chiron Sung HK',serif;font-weight:700;font-size:44px;line-height:1;color:#793A0D;font-variant-numeric:tabular-nums">9</span></div>
+                    <div style="display:flex;align-items:center;justify-content:center;width:46px;height:68px;border-radius:8px;background:#F2E5D9;box-shadow:inset 0 -1px 0 rgba(121,58,13,0.1),inset 0 1px 0 rgba(255,255,255,0.7)"><span style="font-family:'Chiron Sung HK',serif;font-weight:700;font-size:44px;line-height:1;color:#793A0D;font-variant-numeric:tabular-nums">8</span></div>
+                  </div>
+                  <div style="font-family:'Chiron Sung HK',serif;font-weight:700;font-size:20px;line-height:1.2;color:#793A0D;align-self:flex-end;padding-bottom:6px">人</div>
+                </div>
+
+                <sc-if value="{{ showGender }}" hint-placeholder-val="{{ true }}">
+                  <div id="genderRatio" style="margin-top:18px;padding-top:16px;border-top:1px solid rgba(121,58,13,0.14);text-align:left">
+                    <div style="font-size:13px;line-height:20px;letter-spacing:0.04em;color:#8A5322;white-space:nowrap">目前報名性別比</div>
+                    <div style="position:relative;display:flex;height:15px;margin-top:10px;border-radius:9999px;overflow:hidden;background:#EDE2D6">
+                      <div id="genderFemaleBar" style="position:relative;width:45%;overflow:hidden;background:#DD6B91;box-shadow:inset -1.5px 0 0 rgba(252,244,236,0.9)">
+                        <div style="position:absolute;left:-100%;top:0;width:300%;height:15px;background:repeating-linear-gradient(90deg,#DD6B91 0%,#E2769A 2.7777%,#E77FA3 6.9444%,#ED91B0 11.1111%,#F2A0BC 16.6666%,#ED91B0 22.2222%,#E77FA3 26.3888%,#E2769A 30.5555%,#DD6B91 33.3333%);animation:th-drift-in 7.6s linear infinite"></div>
+                      </div>
+                      <div id="genderMaleBar" style="position:relative;width:55%;overflow:hidden;background:#3872B0">
+                        <div style="position:absolute;left:-100%;top:0;width:300%;height:15px;background:repeating-linear-gradient(90deg,#3872B0 0%,#3F7BBB 2.7777%,#4785C5 6.9444%,#5595D4 11.1111%,#63A2DF 16.6666%,#5595D4 22.2222%,#4785C5 26.3888%,#3F7BBB 30.5555%,#3872B0 33.3333%);animation:th-drift-out 7.6s linear infinite"></div>
+                      </div>
+                    </div>
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-top:9px">
+                      <div style="display:flex;align-items:baseline;gap:5px">
+                        <div style="font-size:12px;line-height:18px;color:#666666">女性</div>
+                        <div id="genderFemalePct" style="font-size:15px;line-height:20px;font-weight:700;color:#C43C68;font-variant-numeric:tabular-nums">45%</div>
+                      </div>
+                      <div style="display:flex;align-items:baseline;gap:5px">
+                        <div id="genderMalePct" style="font-size:15px;line-height:20px;font-weight:700;color:#2C63AA;font-variant-numeric:tabular-nums">55%</div>
+                        <div style="font-size:12px;line-height:18px;color:#666666">男性</div>
+                      </div>
+                    </div>
+                    <div style="font-size:11px;line-height:18px;color:#666666;margin-top:10px;text-align:left;text-wrap:pretty">樹屋會自動維持接近 1:1 的性別平衡<br>確保大家都有最自在的聊天體驗。</div>
+                  </div>
+                </sc-if>
+                <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-top:16px;padding-top:14px;border-top:1px solid rgba(121,58,13,0.1)">
+                  <div style="position:relative;flex:none;width:6px;height:6px">
+                    <div style="position:absolute;inset:0;border-radius:9999px;background:#166534"></div>
+                    <div style="position:absolute;inset:0;border-radius:9999px;background:#166534;animation:th-ring 2.8s ease-out infinite"></div>
+                  </div>
+                  <div style="font-size:12px;line-height:18px;color:#666666;white-space:nowrap">即時更新中</div>
+                </div>
+              </div>
+            </div>
+
+
+            <a id="ctaButton" href="#" target="_blank" rel="noopener" style="position:relative;z-index:1;display:flex;align-items:center;justify-content:center;width:100%;height:56px;margin-top:26px;border-radius:60px;background:#FCF4EC;color:#793A0D;font-size:19px;font-weight:700;letter-spacing:0.06em;text-decoration:none;box-shadow:0 4px 4px rgba(121,58,13,0.1),0 14px 34px rgba(6,6,36,0.34)" style-hover="background:#FFFFFF">我要報名</a>
+          </div>
+        </div>
+
+        <!-- ─── 怎麼玩 · IG Story 式輪播（滿版不裁切，點左右換頁，四張循環） ─── -->
+        <div style="padding:30px 0 34px;background:#FCF4EC">
+          <div style="display:flex;align-items:center;justify-content:center;height:44px;padding:0 24px;text-align:center">
+            <div style="font-family:'Chiron Sung HK',serif;font-weight:700;font-size:22px;line-height:1.3;color:#793A0D;white-space:nowrap">Treehouse 怎麼玩👇</div>
+          </div>
+          <div style="position:relative;width:390px;height:848px;margin-top:30px;overflow:hidden;background:#060624;touch-action:pan-y;user-select:none;cursor:grab" onPointerDown="{{ hDown }}" onPointerMove="{{ hMove }}" onPointerUp="{{ hUp }}" onPointerCancel="{{ hUp }}">
+            <div id="howTrack" style="display:flex;height:848px;will-change:transform;transform:translateX({{ hTx }}px);transition:{{ hTrans }}" onTransitionEnd="{{ hEnd }}">
+              <sc-for list="{{ shots }}" as="it" hint-placeholder-count="4">
+                <img src="{{ it.src }}" alt="{{ it.alt }}" draggable="false" style="display:block;flex:0 0 auto;width:390px;height:848px;object-fit:contain;background:#060624;pointer-events:none">
+              </sc-for>
+            </div>
+            <div id="howDots" style="position:absolute;left:0;right:0;top:0;display:flex;gap:4px;padding:14px 14px 0">
+              <sc-for list="{{ hBars }}" as="b" hint-placeholder-count="4">
+                <div style="flex:1 1 0;height:3px;border-radius:2px;background:rgba(255,255,255,0.3);overflow:hidden">
+                  <div style="width:{{ b.w }};height:3px;border-radius:2px;background:#FFFFFF;transition:width 60ms linear"></div>
+                </div>
+              </sc-for>
+            </div>
+            <button type="button" class="how__arrow how__arrow--prev" aria-label="上一張" onClick="{{ hPrev }}" style="position:absolute;left:0;top:34px;bottom:0;width:34%;border:0;background:transparent;cursor:pointer"></button>
+            <button type="button" class="how__arrow how__arrow--next" aria-label="下一張" onClick="{{ hNext }}" style="position:absolute;right:0;top:34px;bottom:0;width:46%;border:0;background:transparent;cursor:pointer"></button>
+            <div style="position:absolute;right:16px;top:50%;margin-top:-14px;display:flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:9999px;background:rgba(255,255,255,0.9);color:#3A2E22;pointer-events:none;animation:th-tap 4.6s ease-in-out infinite">
+              <svg viewBox="0 0 6.5 10" width="7" height="11" fill="none" aria-hidden="true" focusable="false" style="display:block"><path d="M 0.336 8.253 C -0.077 8.62 -0.114 9.251 0.253 9.664 C 0.62 10.077 1.251 10.114 1.664 9.747 L 6.164 5.747 C 6.377 5.557 6.5 5.285 6.5 5 C 6.5 4.714 6.377 4.442 6.164 4.253 L 1.664 0.253 C 1.251 -0.114 0.62 -0.077 0.253 0.336 C -0.114 0.748 -0.077 1.38 0.336 1.747 L 3.995 5 L 0.336 8.253 Z" fill="currentColor"></path></svg>
+            </div>
+          </div>
+        </div>
+
+
+        <!-- ─── 沒有免費版本（旗標） ─── -->
+        <sc-if value="{{ showPricing }}" hint-placeholder-val="{{ true }}">
+          <div id="pricingSection" style="margin:16px 24px 0;background:#FFFFFF;border-radius:20px;box-shadow:0 4px 4px rgba(0,0,0,0.05);overflow:hidden">
+            <button type="button" id="pricingToggle" aria-expanded="true" style="display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;padding:20px 22px;border:0;background:transparent;text-align:left;cursor:pointer;font-family:inherit">
+              <div style="font-size:16px;line-height:24px;font-weight:700;color:#793A0D">Treehouse 沒有免費版本 ☕️</div>
+              <div style="flex:none;display:flex;align-items:center;justify-content:center;width:12px;height:12px;color:#8A5322"><svg viewBox="0 0 9.999 6.5" width="9.999" height="6.5" fill="none" aria-hidden="true" focusable="false" style="display:block"><path d="M 8.253 0.336 C 8.62 -0.077 9.251 -0.114 9.664 0.253 C 10.077 0.62 10.114 1.251 9.747 1.664 L 5.747 6.164 C 5.557 6.377 5.285 6.5 5 6.5 C 4.714 6.5 4.442 6.377 4.253 6.164 L 0.253 1.664 C -0.114 1.251 -0.077 0.62 0.336 0.253 C 0.748 -0.114 1.38 -0.077 1.747 0.336 L 5 3.995 L 8.253 0.336 Z" fill="currentColor" fill-rule="nonzero"></path></svg></div>
+            </button>
+            <div id="pricingBody" style="padding:0 22px 22px">
+              <div style="font-size:14px;line-height:24px;color:#2A2A2A">我們不靠廣告、也不賣你的聊天內容，所以需要你直接支持。訂閱一個月 <span id="pricingAmount" style="font-weight:700;color:#793A0D">NT$120</span>，新朋友有 <span id="pricingTrial" style="font-weight:700;color:#793A0D">7</span> 天可以先試試看。</div>
+              <div style="height:1px;background:#EEEEEE;margin:18px 0"></div>
+              <div style="display:flex;flex-direction:column;gap:8px;font-size:13px;line-height:22px;color:#666666">
+                <div style="display:flex;gap:10px"><span style="flex:none;color:#666666">·</span><span>沒有廣告，沒有推薦演算法</span></div>
+                <div style="display:flex;gap:10px"><span style="flex:none;color:#666666">·</span><span>聊天內容不作訓練、不外流</span></div>
+                <div style="display:flex;gap:10px"><span style="flex:none;color:#666666">·</span><span>Beta 期間全部免費，正式上線前會先通知你</span></div>
+              </div>
+            </div>
+          </div>
+        </sc-if>
+
+        <!-- ─── Footer ─── -->
+        <div style="margin-top:34px;padding:28px 24px 34px;background:#F2E5D9">
+          <div style="font-family:'Caprasimo',serif;font-size:26px;line-height:1;letter-spacing:-0.062em;color:#793A0D">treehouse</div>
+          <div style="display:flex;flex-wrap:wrap;gap:10px 20px;margin-top:16px;font-size:13px;line-height:22px">
+            <a href="#" style="color:#793A0D;text-decoration:none;white-space:nowrap">關於樹屋</a>
+            <a href="#" style="color:#793A0D;text-decoration:none;white-space:nowrap">隱私權政策</a>
+            <a href="#" style="color:#793A0D;text-decoration:none;white-space:nowrap">服務條款</a>
+            <a href="#" style="color:#793A0D;text-decoration:none;white-space:nowrap">聯絡我們</a>
+          </div>
+          <div style="font-size:12px;line-height:18px;color:#8A5322;margin-top:18px">© 2026 Treehouse</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════ 桌機首屏 ════════ -->
+    <div style="display:flex;flex-direction:column;gap:20px">
+      <div style="display:flex;align-items:baseline;gap:14px">
+        <div style="background:#3A2E22;color:#FCF4EC;border-radius:8px;padding:5px 15px;font-size:20px;font-weight:700">桌機 1280px</div>
+        <div style="font-size:22px;line-height:32px;color:#4A3B2C">同一套元素改成左右兩欄，森林拉寬；輪播露出箭頭</div>
+      </div>
+
+      <div style="width:1280px;background:#FCF4EC;box-shadow:0 40px 90px rgba(58,46,34,0.28)">
+        <div style="position:relative;width:1280px;height:760px;overflow:hidden;background:#060624">
+          <div style="position:absolute;inset:0;background:linear-gradient(180deg,#060624 0%,#0A2B5C 24%,#0D3D7A 40%,#3E5A94 58%,#7A7CAA 72%,#BD9EB8 84%,#D95C26 94%,#EFA36B 100%)"></div>
+          <div style="position:absolute;left:0;right:0;top:0;height:440px;background-image:url(assets/starfield.png);background-size:1280px 700px;background-position:0 -10px;background-repeat:no-repeat;opacity:0.9"></div>
+          <div style="position:absolute;left:0;right:0;bottom:0;height:300px;overflow:hidden;-webkit-mask-image:linear-gradient(180deg,rgba(0,0,0,0) 0px,rgba(0,0,0,1) 100px);mask-image:linear-gradient(180deg,rgba(0,0,0,0) 0px,rgba(0,0,0,1) 100px)">
+            <img src="assets/forest-trees.svg" alt="" style="position:absolute;left:50%;margin-left:-800px;bottom:-704px;width:1600px;height:1600px;opacity:0.95;filter:brightness(0.62) saturate(0.55)">
+            <div style="position:absolute;left:0;right:0;bottom:0;height:44px;background:linear-gradient(180deg,rgba(11,10,18,0) 0%,rgba(11,10,18,0.42) 100%)"></div>
+          </div>
+
+          <div style="position:absolute;left:0;right:0;top:0;bottom:0;display:flex;align-items:center;justify-content:space-between;gap:80px;padding:0 104px">
+            <div style="flex:none">
+              <div style="font-family:'Caprasimo',serif;font-size:104px;line-height:1;letter-spacing:-0.062em;color:#FCF4EC;white-space:nowrap;text-shadow:0 5px 34px rgba(6,6,36,0.45)">treehouse</div>
+              <div style="font-family:'Chiron Sung HK',serif;font-weight:700;font-size:44px;line-height:1.24;letter-spacing:0.02em;color:#FFFFFF;margin-top:32px;white-space:nowrap;text-shadow:0 2px 16px rgba(6,6,36,0.55)">每晚10點，認真聊天</div>
+              <div style="font-family:'Chiron Sung HK',serif;font-weight:400;font-size:22px;line-height:1.5;letter-spacing:0.15em;color:rgba(255,255,255,0.85);margin-top:16px;white-space:nowrap">純文字｜全匿名｜三個回合</div>
+              <sc-if value="{{ cdBefore }}" hint-placeholder-val="{{ true }}">
+              <div style="display:flex;margin-top:36px">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:12px">
+          <div style="font-size:11px;line-height:16px;letter-spacing:0.16em;color:rgba(255,255,255,0.7);white-space:nowrap;text-shadow:0 2px 12px rgba(6,6,36,0.6)">距離公測開始還有</div>
+          <div style="display:flex;align-items:flex-end;justify-content:space-between;width:420px;box-sizing:border-box;padding:14px 26px;border-radius:20px;background:rgba(255,255,255,0.1);box-shadow:inset 0 0 0 1px rgba(255,255,255,0.3),0 8px 22px rgba(6,6,36,0.22);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)">
+            <div style="display:flex;flex-direction:column;align-items:center;min-width:auto">
+              <div  style="font-family:'Chiron Sung HK',serif;font-weight:700;font-size:32px;line-height:1.04;color:rgba(255,255,255,0.94);font-variant-numeric:tabular-nums">32</div>
+              <div style="font-size:11px;line-height:16px;letter-spacing:0.1em;color:rgba(255,255,255,0.62);margin-top:2px">天</div>
+            </div>
+            <div style="font-family:'Chiron Sung HK',serif;font-weight:700;font-size:23px;line-height:1.04;color:rgba(255,255,255,0.36);padding-bottom:18px">:</div>
+            <div style="display:flex;flex-direction:column;align-items:center;min-width:auto">
+              <div  style="font-family:'Chiron Sung HK',serif;font-weight:700;font-size:32px;line-height:1.04;color:rgba(255,255,255,0.94);font-variant-numeric:tabular-nums">08</div>
+              <div style="font-size:11px;line-height:16px;letter-spacing:0.1em;color:rgba(255,255,255,0.62);margin-top:2px">時</div>
+            </div>
+            <div style="font-family:'Chiron Sung HK',serif;font-weight:700;font-size:23px;line-height:1.04;color:rgba(255,255,255,0.36);padding-bottom:18px">:</div>
+            <div style="display:flex;flex-direction:column;align-items:center;min-width:auto">
+              <div  style="font-family:'Chiron Sung HK',serif;font-weight:700;font-size:32px;line-height:1.04;color:rgba(255,255,255,0.94);font-variant-numeric:tabular-nums">14</div>
+              <div style="font-size:11px;line-height:16px;letter-spacing:0.1em;color:rgba(255,255,255,0.62);margin-top:2px">分</div>
+            </div>
+            <div style="font-family:'Chiron Sung HK',serif;font-weight:700;font-size:23px;line-height:1.04;color:rgba(255,255,255,0.36);padding-bottom:18px">:</div>
+            <div style="display:flex;flex-direction:column;align-items:center;min-width:auto">
+              <div  style="font-family:'Chiron Sung HK',serif;font-weight:700;font-size:32px;line-height:1.04;color:rgba(255,255,255,0.94);font-variant-numeric:tabular-nums">27</div>
+              <div style="font-size:11px;line-height:16px;letter-spacing:0.1em;color:rgba(255,255,255,0.62);margin-top:2px">秒</div>
+            </div>
+          </div>
+        </div>
+              </div>
+              </sc-if>
+              <sc-if value="{{ cdLive }}" hint-placeholder-val="{{ false }}">
+                <div style="display:flex;align-items:center;gap:16px;margin-top:36px;padding:18px 30px;border-radius:20px;background:rgba(255,255,255,0.14);box-shadow:inset 0 0 0 1px rgba(255,255,255,0.42),0 4px 4px rgba(121,58,13,0.1),0 10px 30px rgba(6,6,36,0.28);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)">
+                  <div style="flex:none;width:13px;height:13px;border-radius:9999px;background:#8FE3A8;box-shadow:0 0 16px 5px rgba(143,227,168,0.6);animation:th-breathe 2.6s ease-in-out infinite"></div>
+                  <div style="font-family:'Chiron Sung HK',serif;font-weight:700;font-size:32px;line-height:1.2;letter-spacing:0.03em;color:#FFFFFF;white-space:nowrap">測試進行中，手刀快加入！</div>
+                </div>
+              </sc-if>
+              <div style="display:flex;margin-top:44px">
+                <div style="flex:none;display:flex;align-items:center;justify-content:center;width:300px;height:62px;border-radius:60px;background:#FCF4EC;color:#793A0D;font-size:21px;font-weight:700;letter-spacing:0.06em;box-shadow:0 4px 4px rgba(121,58,13,0.1),0 16px 40px rgba(6,6,36,0.34)">我要報名</div>
+              </div>
+            </div>
+            <div style="flex:none;display:flex;flex-direction:column;align-items:center">
+              <div style="width:420px;background:#FCF4EC;border-radius:20px;padding:32px 40px 34px;box-sizing:border-box;text-align:center;box-shadow:0 4px 4px rgba(121,58,13,0.1),0 18px 36px rgba(6,6,36,0.3)">
+                <div style="display:flex;align-items:center;justify-content:center">
+                  <div style="position:relative;font-size:16px;line-height:24px;letter-spacing:0.14em;color:#8A5322">
+                    <img src="assets/house-mark.svg" alt="" style="position:absolute;right:100%;top:50%;margin-top:-9px;margin-right:11px;display:block;width:19px;height:19px;opacity:0.8">目前早鳥體驗報名人數
+                  </div>
+                </div>
+                <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin-top:8px">
+                  <div style="display:flex;gap:8px" data-value="298">
+                    <div style="display:flex;align-items:center;justify-content:center;width:62px;height:92px;border-radius:8px;background:#F6EADD;box-shadow:inset 0 -1px 0 rgba(121,58,13,0.1),inset 0 1px 0 rgba(255,255,255,0.7)"><span style="font-family:'Chiron Sung HK',serif;font-weight:700;font-size:60px;line-height:1;color:rgba(121,58,13,0.26);font-variant-numeric:tabular-nums">0</span></div>
+                    <div style="display:flex;align-items:center;justify-content:center;width:62px;height:92px;border-radius:8px;background:#F6EADD;box-shadow:inset 0 -1px 0 rgba(121,58,13,0.1),inset 0 1px 0 rgba(255,255,255,0.7)"><span style="font-family:'Chiron Sung HK',serif;font-weight:700;font-size:60px;line-height:1;color:rgba(121,58,13,0.26);font-variant-numeric:tabular-nums">0</span></div>
+                    <div style="display:flex;align-items:center;justify-content:center;width:62px;height:92px;border-radius:8px;background:#F2E5D9;box-shadow:inset 0 -1px 0 rgba(121,58,13,0.1),inset 0 1px 0 rgba(255,255,255,0.7)"><span style="font-family:'Chiron Sung HK',serif;font-weight:700;font-size:60px;line-height:1;color:#793A0D;font-variant-numeric:tabular-nums">2</span></div>
+                    <div style="display:flex;align-items:center;justify-content:center;width:62px;height:92px;border-radius:8px;background:#F2E5D9;box-shadow:inset 0 -1px 0 rgba(121,58,13,0.1),inset 0 1px 0 rgba(255,255,255,0.7)"><span style="font-family:'Chiron Sung HK',serif;font-weight:700;font-size:60px;line-height:1;color:#793A0D;font-variant-numeric:tabular-nums">9</span></div>
+                    <div style="display:flex;align-items:center;justify-content:center;width:62px;height:92px;border-radius:8px;background:#F2E5D9;box-shadow:inset 0 -1px 0 rgba(121,58,13,0.1),inset 0 1px 0 rgba(255,255,255,0.7)"><span style="font-family:'Chiron Sung HK',serif;font-weight:700;font-size:60px;line-height:1;color:#793A0D;font-variant-numeric:tabular-nums">8</span></div>
+                  </div>
+                  <div style="font-family:'Chiron Sung HK',serif;font-weight:700;font-size:28px;line-height:1.2;color:#793A0D;align-self:flex-end;padding-bottom:6px">人</div>
+                </div>
+
+                <sc-if value="{{ showGender }}" hint-placeholder-val="{{ true }}">
+                  <div style="margin-top:22px;padding-top:20px;border-top:1px solid rgba(121,58,13,0.14);text-align:left">
+                    <div style="font-size:15px;line-height:22px;letter-spacing:0.04em;color:#8A5322;white-space:nowrap">目前報名性別比</div>
+                    <div style="position:relative;display:flex;height:18px;margin-top:12px;border-radius:9999px;overflow:hidden;background:#EDE2D6">
+                      <div style="position:relative;width:45%;overflow:hidden;background:#DD6B91;box-shadow:inset -2px 0 0 rgba(252,244,236,0.9)">
+                        <div style="position:absolute;left:-100%;top:0;width:300%;height:18px;background:repeating-linear-gradient(90deg,#DD6B91 0%,#E2769A 2.7777%,#E77FA3 6.9444%,#ED91B0 11.1111%,#F2A0BC 16.6666%,#ED91B0 22.2222%,#E77FA3 26.3888%,#E2769A 30.5555%,#DD6B91 33.3333%);animation:th-drift-in 7.6s linear infinite"></div>
+                      </div>
+                      <div style="position:relative;width:55%;overflow:hidden;background:#3872B0">
+                        <div style="position:absolute;left:-100%;top:0;width:300%;height:18px;background:repeating-linear-gradient(90deg,#3872B0 0%,#3F7BBB 2.7777%,#4785C5 6.9444%,#5595D4 11.1111%,#63A2DF 16.6666%,#5595D4 22.2222%,#4785C5 26.3888%,#3F7BBB 30.5555%,#3872B0 33.3333%);animation:th-drift-out 7.6s linear infinite"></div>
+                      </div>
+                    </div>
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-top:11px">
+                      <div style="display:flex;align-items:baseline;gap:6px">
+                        <div style="font-size:14px;line-height:20px;color:#666666">女性</div>
+                        <div style="font-size:17px;line-height:22px;font-weight:700;color:#C43C68;font-variant-numeric:tabular-nums">45%</div>
+                      </div>
+                      <div style="display:flex;align-items:baseline;gap:6px">
+                        <div style="font-size:17px;line-height:22px;font-weight:700;color:#2C63AA;font-variant-numeric:tabular-nums">55%</div>
+                        <div style="font-size:14px;line-height:20px;color:#666666">男性</div>
+                      </div>
+                    </div>
+                    <div style="font-size:12px;line-height:20px;color:#666666;margin-top:12px;text-align:left;text-wrap:pretty">樹屋會自動維持接近 1:1 的性別平衡<br>確保大家都有最自在的聊天體驗。</div>
+                  </div>
+                </sc-if>
+                <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-top:18px;padding-top:16px;border-top:1px solid rgba(121,58,13,0.1)">
+                  <div style="position:relative;flex:none;width:7px;height:7px">
+                    <div style="position:absolute;inset:0;border-radius:9999px;background:#166534"></div>
+                    <div style="position:absolute;inset:0;border-radius:9999px;background:#166534;animation:th-ring 2.8s ease-out infinite"></div>
+                  </div>
+                  <div style="font-size:13px;line-height:18px;color:#666666;white-space:nowrap">即時更新中</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;align-items:center;justify-content:center;height:56px;margin:40px 0 0;padding:0 104px;text-align:center">
+          <div style="font-family:'Chiron Sung HK',serif;font-weight:700;font-size:30px;line-height:1.3;color:#793A0D;white-space:nowrap">Treehouse 怎麼玩👇</div>
+        </div>
+        <div style="position:relative;width:1280px;height:700px;margin-top:40px;overflow:hidden;background:#060624;user-select:none;cursor:grab" onPointerDown="{{ dDown }}" onPointerMove="{{ dMove }}" onPointerUp="{{ dUp }}" onPointerCancel="{{ dUp }}">
+          <div style="display:flex;height:700px;will-change:transform;transform:translateX({{ dTx }}px);transition:{{ dTrans }}" onTransitionEnd="{{ dEnd }}">
+            <sc-for list="{{ shots }}" as="it" hint-placeholder-count="4">
+              <div style="flex:0 0 auto;display:flex;align-items:center;justify-content:center;width:1280px;height:700px">
+                <img src="{{ it.src }}" alt="{{ it.alt }}" draggable="false" style="display:block;height:640px;width:auto;border-radius:20px;box-shadow:0 24px 60px rgba(0,0,0,0.45);pointer-events:none">
+              </div>
+            </sc-for>
+          </div>
+          <div style="position:absolute;left:50%;margin-left:-200px;top:0;display:flex;gap:6px;width:400px;padding:18px 0 0">
+            <sc-for list="{{ dBars }}" as="b" hint-placeholder-count="4">
+              <div style="flex:1 1 0;height:4px;border-radius:2px;background:rgba(255,255,255,0.28);overflow:hidden">
+                <div style="width:{{ b.w }};height:4px;border-radius:2px;background:#FFFFFF;transition:width 60ms linear"></div>
+              </div>
+            </sc-for>
+          </div>
+          <button type="button" aria-label="上一張" onClick="{{ dPrev }}" style="position:absolute;left:0;top:46px;bottom:0;width:34%;border:0;background:transparent;cursor:pointer"></button>
+          <button type="button" aria-label="下一張" onClick="{{ dNext }}" style="position:absolute;right:0;top:46px;bottom:0;width:46%;border:0;background:transparent;cursor:pointer"></button>
+          <div style="position:absolute;left:44px;top:50%;margin-top:-24px;display:flex;align-items:center;justify-content:center;width:48px;height:48px;border-radius:9999px;background:rgba(255,255,255,0.16);box-shadow:inset 0 0 0 1px rgba(255,255,255,0.4);color:#FFFFFF;pointer-events:none">
+            <svg viewBox="0 0 6.5 10" width="9" height="14" fill="none" aria-hidden="true" focusable="false" style="display:block"><path d="M 6.164 8.253 C 6.577 8.62 6.614 9.251 6.247 9.664 C 5.88 10.077 5.249 10.114 4.836 9.747 L 0.336 5.747 C 0.122 5.557 0 5.285 0 5 C 0 4.714 0.122 4.442 0.336 4.253 L 4.836 0.253 C 5.249 -0.114 5.88 -0.077 6.247 0.336 C 6.614 0.748 6.577 1.38 6.164 1.747 L 2.505 5 L 6.164 8.253 Z" fill="currentColor"></path></svg>
+          </div>
+          <div style="position:absolute;right:44px;top:50%;margin-top:-24px;display:flex;align-items:center;justify-content:center;width:48px;height:48px;border-radius:9999px;background:rgba(255,255,255,0.16);box-shadow:inset 0 0 0 1px rgba(255,255,255,0.4);color:#FFFFFF;pointer-events:none;animation:th-tap 4.6s ease-in-out infinite">
+            <svg viewBox="0 0 6.5 10" width="9" height="14" fill="none" aria-hidden="true" focusable="false" style="display:block"><path d="M 0.336 8.253 C -0.077 8.62 -0.114 9.251 0.253 9.664 C 0.62 10.077 1.251 10.114 1.664 9.747 L 6.164 5.747 C 6.377 5.557 6.5 5.285 6.5 5 C 6.5 4.714 6.377 4.442 6.164 4.253 L 1.664 0.253 C 1.251 -0.114 0.62 -0.077 0.253 0.336 C -0.114 0.748 -0.077 1.38 0.336 1.747 L 3.995 5 L 0.336 8.253 Z" fill="currentColor"></path></svg>
+          </div>
+        </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;betaState&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;公測前 · 倒數&quot;,&quot;公測中 · 快加入&quot;],&quot;default&quot;:&quot;公測前 · 倒數&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;旗標（config flags）&quot;},&quot;showGender&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;旗標（config flags）&quot;},&quot;showPricing&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;旗標（config flags）&quot;},&quot;showCountdown&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;旗標（config flags）&quot;}}">
+const SHOTS = [
+  { src: 'export/ios/iOS-1320x2868-01.png', alt: '每晚 10 點開場，純文字、全匿名的三回合聊天' },
+  { src: 'export/ios/iOS-1320x2868-02.png', alt: '配對後互相抽對方寫的話題卡' },
+  { src: 'export/ios/iOS-1320x2868-03.png', alt: '三個回合結束後，雙方各自決定要不要繼續' },
+  { src: 'export/ios/iOS-1320x2868-04.png', alt: '1:1 性別平衡機制，讓每個人都聊得到' }
+];
+// three copies so the reel can slide either way; silently re-centred on transitionend —
+// that is what lets 第一張 → 往右 → 第四張 loop with no visible jump.
+const REEL = SHOTS.concat(SHOTS, SHOTS);
+const N = SHOTS.length;
+const W = { m: 390, d: 1280 };
+
+// Instagram advances a photo story after ~7s; the filling bar is the only timing cue.
+const DWELL = 7000;
+const TICK = 50;
+
+class Component extends DCLogic {
+  state = { m: N, d: N, drag: null, anim: { m: true, d: true }, p: { m: 0, d: 0 }, auto: true };
+
+  componentDidMount() {
+    const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduce) { this.setState({ auto: false }); return; }
+    this.timer = setInterval(() => {
+      if (document.hidden) return;
+      this.setState(s => {
+        if (!s.auto) return null;
+        const p = Object.assign({}, s.p);
+        const next = {};
+        ['m', 'd'].forEach(v => {
+          if (s.drag && s.drag.v === v) return;
+          p[v] += TICK / DWELL;
+          if (p[v] >= 1) { p[v] = 0; next[v] = s[v] + 1; }
+        });
+        const anim = Object.assign({}, s.anim);
+        Object.keys(next).forEach(v => { anim[v] = true; });
+        return Object.assign({ p, anim }, next);
+      });
+    }, TICK);
+  }
+  componentWillUnmount() { clearInterval(this.timer); }
+
+  tx(v) {
+    const d = this.state.drag && this.state.drag.v === v ? this.state.drag.dx : 0;
+    return -this.state[v] * W[v] + d;
+  }
+  trans(v) {
+    if (this.state.drag && this.state.drag.v === v) return 'none';
+    return this.state.anim[v] ? 'transform 360ms cubic-bezier(.22,.61,.36,1)' : 'none';
+  }
+  step(v, dir) {
+    this.setState(s => ({ anim: Object.assign({}, s.anim, { [v]: true }), [v]: s[v] + dir, p: Object.assign({}, s.p, { [v]: 0 }) }));
+  }
+  endReel(v) {
+    const cur = this.state[v];
+    if (cur >= N && cur < N * 2) return;
+    this.setState(s => ({ anim: Object.assign({}, s.anim, { [v]: false }), [v]: N + (((cur % N) + N) % N) }));
+  }
+  down(v, e) { if (e.button > 0) return; this.setState({ drag: { v, x0: e.clientX, dx: 0 } }); }
+  move(v, e) {
+    const d = this.state.drag;
+    if (d && d.v === v) this.setState({ drag: { v, x0: d.x0, dx: e.clientX - d.x0 } });
+  }
+  up(v) {
+    const d = this.state.drag;
+    if (!d || d.v !== v) return;
+    const dir = d.dx < -56 ? 1 : d.dx > 56 ? -1 : 0;
+    this.setState({ drag: null }, () => { if (dir) this.step(v, dir); else this.forceUpdate(); });
+  }
+  bars(v) {
+    const act = ((this.state[v] % N) + N) % N;
+    const p = this.state.p[v];
+    return SHOTS.map((_, i) => ({
+      w: i < act ? '100%' : i === act ? (this.state.auto ? (p * 100).toFixed(1) + '%' : '100%') : '0%'
+    }));
+  }
+
+  renderVals() {
+    return {
+      shots: REEL,
+      hTx: this.tx('m'), hTrans: this.trans('m'), hEnd: () => this.endReel('m'), hBars: this.bars('m'),
+      hDown: e => this.down('m', e), hMove: e => this.move('m', e), hUp: () => this.up('m'),
+      hPrev: () => this.step('m', -1), hNext: () => this.step('m', 1),
+
+      dTx: this.tx('d'), dTrans: this.trans('d'), dEnd: () => this.endReel('d'), dBars: this.bars('d'),
+      dDown: e => this.down('d', e), dMove: e => this.move('d', e), dUp: () => this.up('d'),
+      dPrev: () => this.step('d', -1), dNext: () => this.step('d', 1),
+
+      showGender: this.props.showGender ?? true,
+      showPricing: this.props.showPricing ?? true,
+      showCountdown: this.props.showCountdown ?? true,
+      cdBefore: (this.props.showCountdown ?? true) && (this.props.betaState ?? '公測前 · 倒數') === '公測前 · 倒數',
+      cdLive: (this.props.showCountdown ?? true) && (this.props.betaState ?? '公測前 · 倒數') === '公測中 · 快加入'
+    };
+  }
+}
+</script>
+</body>
+</html>

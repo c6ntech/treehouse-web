@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<title>設計稿對稿檢查 · /join</title>
+<style>
+  body { margin: 0; background: #DAD3CA; font-family: "Noto Sans TC", system-ui, sans-serif; color: #3A2E22; }
+  .wrap { display: flex; flex-wrap: wrap; gap: 28px; padding: 28px; align-items: flex-start; }
+  .col { display: flex; flex-direction: column; gap: 8px; }
+  .tag { font-size: 13px; font-weight: 700; }
+  iframe { border: 0; background: #FCF4EC; box-shadow: 0 10px 30px rgba(58,46,34,.25); display: block; }
+  #report { padding: 0 28px 40px; font-family: ui-monospace, monospace; font-size: 12px; line-height: 20px; white-space: pre; }
+  .pass { color: #166534; }
+  .fail { color: #B91C1C; font-weight: 700; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="col"><div class="tag">手機參考畫布 390 × 844</div><iframe id="m" src="/join/index.html?flags=on" width="390" height="844"></iframe></div>
+  <div class="col"><div class="tag">桌機參考畫布 1280 × 760</div><iframe id="d" src="/join/index.html?flags=on" width="1280" height="760"></iframe></div>
+</div>
+<div id="report">量測中…</div>
+
+<script>
+// 設計稿（Join Page.dc.html）的絕對數值。CC 改完 CSS 後重開此頁，全部必須 PASS。
+var SPEC = {
+  m: { w: 390, h: 844, tol: 2, items: [
+    ['星空帶高', '.hero__stars', 'height', 470],
+    ['星空圖高', '.hero__stars', 'bgH', 640],
+    ['剪影帶高', '.hero__forest', 'height', 300],
+    ['剪影圖寬', '.hero__forest img', 'width', 700],
+    ['剪影圖下移', '.hero__forest img', 'bottomOffset', -308],
+    ['地面帶高', '.hero__forest i', 'height', 26],
+    ['看板卡寬', '.signboard__plaque', 'width', 320],
+    ['計數格高', '.odo__d', 'height', 68],
+    ['比例條高', '.ratio__bar', 'height', 15],
+    ['倒數卡寬', '.hero__countdown-chip', 'width', 320],
+    ['CTA 高', '.cta', 'height', 56]
+  ]},
+  d: { w: 1280, h: 760, tol: 2, items: [
+    ['星空帶高', '.hero__stars', 'height', 440],
+    ['星空圖高', '.hero__stars', 'bgH', 700],
+    ['剪影帶高', '.hero__forest', 'height', 300],
+    ['剪影圖寬', '.hero__forest img', 'width', 1600],
+    ['剪影圖下移', '.hero__forest img', 'bottomOffset', -704],
+    ['地面帶高', '.hero__forest i', 'height', 44],
+    ['看板卡寬', '.signboard__plaque', 'width', 420],
+    ['計數格高', '.odo__d', 'height', 92],
+    ['比例條高', '.ratio__bar', 'height', 18],
+    ['倒數卡寬', '.hero__countdown-chip', 'width', 420],
+    ['CTA 高', '.cta', 'height', 62]
+  ]}
+};
+
+function measure(doc, sel, prop) {
+  var el = doc.querySelector(sel);
+  if (!el) return null;
+  var r = el.getBoundingClientRect();
+  if (prop === 'width') return r.width;
+  if (prop === 'height') return r.height;
+  if (prop === 'bgH') {
+    var bs = getComputedStyle(el).backgroundSize.split(' ');
+    return parseFloat(bs[1]);
+  }
+  if (prop === 'bottomOffset') {
+    var host = el.parentElement.getBoundingClientRect();
+    return host.bottom - r.bottom;
+  }
+  return null;
+}
+
+function run() {
+  var lines = [];
+  var fails = 0;
+  Object.keys(SPEC).forEach(function (key) {
+    var spec = SPEC[key];
+    var f = document.getElementById(key);
+    var doc = f.contentDocument;
+    lines.push('■ ' + (key === 'm' ? '手機' : '桌機') + ' ' + spec.w + '×' + spec.h + '  視窗 ' + f.contentWindow.innerWidth + '×' + f.contentWindow.innerHeight);
+    spec.items.forEach(function (it) {
+      var got = measure(doc, it[1], it[2]);
+      var want = it[3];
+      var ok = got !== null && Math.abs(got - want) <= spec.tol;
+      if (!ok) fails++;
+      lines.push('   ' + (ok ? '<span class="pass">PASS</span>' : '<span class="fail">FAIL</span>') +
+        '  ' + it[0] + '  期望 ' + want + '  實測 ' + (got === null ? '(找不到元素)' : Math.round(got * 10) / 10));
+    });
+    var cta = doc.querySelector('.cta').getBoundingClientRect();
+    var fits = cta.bottom <= f.contentWindow.innerHeight;
+    if (!fits) fails++;
+    lines.push('   ' + (fits ? '<span class="pass">PASS</span>' : '<span class="fail">FAIL</span>') +
+      '  CTA 在首屏內  餘裕 ' + Math.round(f.contentWindow.innerHeight - cta.bottom) + 'px');
+    lines.push('');
+  });
+  lines.unshift(fails === 0 ? '<span class="pass">全部通過（' + '對稿一致）</span>\n' : '<span class="fail">' + fails + ' 項不符設計稿</span>\n');
+  document.getElementById('report').innerHTML = lines.join('\n');
+}
+
+window.addEventListener('load', function () { setTimeout(run, 600); });
+</script>
+</body>
+</html>

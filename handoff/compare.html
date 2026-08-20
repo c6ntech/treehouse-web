@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<title>設計稿 ↔ 實作 逐項對稿</title>
+<style>
+  body { margin: 0; background: #DAD3CA; font-family: "Noto Sans TC", system-ui, sans-serif; color: #3A2E22; }
+  h1 { font-size: 18px; margin: 20px 24px 4px; }
+  p.lead { font-size: 13px; line-height: 20px; margin: 0 24px 16px; color: #5C4B3A; }
+  .rig { display: flex; gap: 20px; padding: 0 24px 20px; align-items: flex-start; }
+  .rig div { font-size: 12px; font-weight: 700; margin-bottom: 6px; }
+  iframe { border: 0; background: #FCF4EC; box-shadow: 0 8px 24px rgba(58,46,34,.22); display: block; }
+  #out { margin: 0 24px 40px; font-family: ui-monospace, monospace; font-size: 12px; line-height: 19px; white-space: pre; }
+  .pass { color: #166534; }
+  .fail { color: #B91C1C; font-weight: 700; }
+</style>
+</head>
+<body>
+<h1>設計稿 ↔ 實作 逐項對稿</h1>
+<p class="lead">左邊是設計稿本身（Join Page.dc.html），右邊是要交付的實作（join/index.html）。<br>
+比對方式：用文字內容配對同一個元素，逐項比 font-family / size / weight / line-height / letter-spacing / color 與盒子尺寸。<b>不是拿我抄下來的數字比，而是直接跟設計稿比。</b></p>
+
+<div class="rig">
+  <div><div>設計稿（DC）</div><iframe id="dc" src="design-reference/Join%20Page.dc.html" width="1500" height="900"></iframe></div>
+  <div><div>實作 390×844</div><iframe id="m" src="/join/index.html?flags=on" width="390" height="844"></iframe></div>
+  <div><div>實作 1280×760</div><iframe id="d" src="/join/index.html?flags=on" width="1280" height="760"></iframe></div>
+</div>
+
+<div id="out">量測中…（設計稿較大，請等 2–3 秒）</div>
+
+<script>
+var PROPS = ['fontFamily', 'fontSize', 'fontWeight', 'lineHeight', 'letterSpacing', 'color'];
+// 要比對的文字（依設計稿裡的出現順序：第 1 次＝手機、第 2 次＝桌機）
+var TEXTS = ['treehouse', '每晚10點，認真聊天', '純文字｜全匿名｜三個回合', '距離公測開始還有',
+             '目前早鳥體驗報名人數', '目前報名性別比', '女性', '男性', '即時更新中', '我要報名'];
+// 輪播標題在設計稿裡位於 hero 畫布之外，另外比
+var TEXTS_OUTSIDE = ['Treehouse 怎麼玩👇'];
+var SPACING = true;
+// 只比尺寸的盒子（設計稿沒有 class，用結構特徵抓）
+var BOXES = [
+  ['計數格', function (d) { return d.querySelector('.odo__d'); }, function (d) { var s = leafByText(d, '2', 0); return s && s.parentElement; }],
+  ['比例條', function (d) { return d.querySelector('.ratio__bar'); }, null]
+];
+
+function norm(s) { return (s || '').replace(/\s+/g, ' ').trim(); }
+function fam(v) { return norm(v).replace(/["']/g, '').split(',')[0].toLowerCase(); }
+
+function frame(doc, w) {
+  // 用實際渲染寬度找設計稿的畫布容器（手機 390 / 桌機 1280），取最內層那一個
+  var all = doc.querySelectorAll('div');
+  var best = null;
+  for (var i = 0; i < all.length; i++) {
+    var el = all[i];
+    if (Math.abs(el.getBoundingClientRect().width - w) > 1) continue;
+    if (el.textContent.indexOf('我要報名') < 0) continue;
+    if (!best || el.contains(best) === false) best = el;
+  }
+  return best || doc.body;
+}
+
+function leaves(root) {
+  var doc = root;
+  var all = root.querySelectorAll('*');
+  var out = [];
+  for (var i = 0; i < all.length; i++) {
+    var el = all[i];
+    var t = norm(el.textContent);
+    if (!t || t.length > 40) continue;
+    // 只要「自己就是那段文字的最內層容器」
+    // 只留最深層那一個（父層 textContent 相同時跳過父層）
+    var kids = el.querySelectorAll('*'), skip = false;
+    for (var k = 0; k < kids.length; k++) if (norm(kids[k].textContent) === t) { skip = true; break; }
+    if (skip) continue;
+    out.push([t, el]);
+  }
+  return out;
+}
+
+function leafByText(root, text, nth) {
+  var L = root.__leaves || (root.__leaves = leaves(root));
+  var hits = L.filter(function (p) { return p[0] === text; });
+  return hits[nth || 0] ? hits[nth || 0][1] : null;
+}
+
+function compare(label, dcDoc, implDoc, nth, lines, fullDoc) {
+  var fails = 0;
+  lines.push('■ ' + label);
+  TEXTS.forEach(function (t) {
+    var a = leafByText(dcDoc, t, 0), b = leafByText(implDoc, t, 0);
+    if (!a || !b) { lines.push('   <span class="fail">MISS</span> ' + t + (a ? ' 實作找不到' : ' 設計稿找不到')); fails++; return; }
+    var ca = a.ownerDocument.defaultView.getComputedStyle(a), cb = b.ownerDocument.defaultView.getComputedStyle(b);
+    var diffs = [];
+    PROPS.forEach(function (p) {
+      var va = ca[p], vb = cb[p];
+      var same;
+      if (p === 'fontFamily') same = fam(va) === fam(vb);
+      else if (/px$/.test(va) && /px$/.test(vb)) same = Math.abs(parseFloat(va) - parseFloat(vb)) <= 0.6;
+      else same = norm(va) === norm(vb);
+      if (!same) diffs.push(p + ': 稿 ' + norm(va).slice(0, 34) + ' / 實 ' + norm(vb).slice(0, 34));
+    });
+    if (diffs.length) { fails += diffs.length; lines.push('   <span class="fail">FAIL</span> ' + t + '\n        ' + diffs.join('\n        ')); }
+    else lines.push('   <span class="pass">PASS</span> ' + t);
+  });
+  TEXTS_OUTSIDE.forEach(function (t) {
+    var a = leafByText(fullDoc, t, nth);
+    var b = leafByText(implDoc, t, 0);
+    if (!a || !b) { lines.push('   <span class="fail">MISS</span> ' + t); fails++; return; }
+    var ca = a.ownerDocument.defaultView.getComputedStyle(a), cb = b.ownerDocument.defaultView.getComputedStyle(b);
+    var diffs = [];
+    PROPS.forEach(function (p) {
+      var va = ca[p], vb = cb[p], same;
+      if (p === 'fontFamily') same = fam(va) === fam(vb);
+      else if (/px$/.test(va) && /px$/.test(vb)) same = Math.abs(parseFloat(va) - parseFloat(vb)) <= 0.6;
+      else same = norm(va) === norm(vb);
+      if (!same) diffs.push(p + ': 稿 ' + norm(va).slice(0, 34) + ' / 實 ' + norm(vb).slice(0, 34));
+    });
+    if (diffs.length) { fails += diffs.length; lines.push('   <span class="fail">FAIL</span> ' + t + '\n        ' + diffs.join('\n        ')); }
+    else lines.push('   <span class="pass">PASS</span> ' + t);
+  });
+
+  // 逐段垂直間距（這是「看起來位置對不對」的關鍵）
+  var GAPS = [
+    ['首屏上留白', null, 'treehouse'],
+    ['字標 → slogan', 'treehouse', '每晚10點，認真聊天'],
+    ['slogan → 副標', '每晚10點，認真聊天', '純文字｜全匿名｜三個回合'],
+    ['副標 → 倒數標籤', '純文字｜全匿名｜三個回合', '距離公測開始還有'],
+    ['倒數標籤 → 倒數卡', '距離公測開始還有', '32'],
+    ['倒數卡 → 看板', '32', '目前早鳥體驗報名人數'],
+    ['看板 → CTA', '即時更新中', '我要報名']
+  ];
+  GAPS.forEach(function (g) {
+    var an = g[1] ? leafByText(dcDoc, g[1], 0) : null, bn = g[1] ? leafByText(implDoc, g[1], 0) : null;
+    var a2 = leafByText(dcDoc, g[2], 0), b2 = leafByText(implDoc, g[2], 0);
+    if (!a2 || !b2 || (g[1] && (!an || !bn))) { lines.push('   <span class="fail">MISS</span> ' + g[0]); fails++; return; }
+    function gap(top, bot, root) {
+      var host = (root.querySelector ? (root.querySelector('.hero') || root) : root).getBoundingClientRect();
+      var rb = bot.getBoundingClientRect();
+      return top ? rb.top - top.getBoundingClientRect().bottom : rb.top - host.top;
+    }
+    var ga = gap(an, a2, dcDoc), gb = gap(bn, b2, implDoc);
+    var ok = Math.abs(ga - gb) <= 2;
+    if (!ok) fails++;
+    lines.push('   ' + (ok ? '<span class="pass">PASS</span>' : '<span class="fail">FAIL</span>') + ' ' + g[0] +
+      '  稿 ' + Math.round(ga) + '  實 ' + Math.round(gb));
+  });
+
+  BOXES.forEach(function (bx) {
+    var b = bx[1](implDoc);
+    var a = bx[2] ? bx[2](dcDoc) : null;
+    if (!b) { lines.push('   <span class="fail">MISS</span> ' + bx[0]); fails++; return; }
+    if (!a) { lines.push('   ---- ' + bx[0] + ' 實作 ' + Math.round(b.getBoundingClientRect().width) + '×' + Math.round(b.getBoundingClientRect().height)); return; }
+    var ra = a.getBoundingClientRect(), rb = b.getBoundingClientRect();
+    var ok = Math.abs(ra.width - rb.width) <= 2 && Math.abs(ra.height - rb.height) <= 2;
+    if (!ok) fails++;
+    lines.push('   ' + (ok ? '<span class="pass">PASS</span>' : '<span class="fail">FAIL</span>') + ' ' + bx[0] +
+      '  稿 ' + Math.round(ra.width) + '×' + Math.round(ra.height) + '  實 ' + Math.round(rb.width) + '×' + Math.round(rb.height));
+  });
+  lines.push('');
+  return fails;
+}
+
+window.addEventListener('load', function () {
+  setTimeout(function () {
+    var dc = document.getElementById('dc').contentDocument;
+    var m = document.getElementById('m').contentDocument;
+    var d = document.getElementById('d').contentDocument;
+    var lines = [], fails = 0;
+    dc.__all = dc;
+    fails += compare('手機：設計稿 vs 實作 390×844', frame(dc, 390), m, 0, lines, dc);
+    fails += compare('桌機：設計稿 vs 實作 1280×760', frame(dc, 1280), d, 1, lines, dc);
+    lines.unshift(fails === 0 ? '<span class="pass">全部一致</span>\n' : '<span class="fail">' + fails + ' 項與設計稿不同</span>\n');
+    document.getElementById('out').innerHTML = lines.join('\n');
+  }, 2600);
+});
+</script>
+</body>
+</html>

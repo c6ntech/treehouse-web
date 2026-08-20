@@ -1,0 +1,12 @@
+/* ============================================================
+   Treehouse /join — 字型
+   ⚠ 設計稿 Join Page.dc.html 用的就是這三套；缺任何一套，字重與字寬
+   都會 fallback 成系統字，整頁的行高與間距都會跟設計稿不同。
+   Caprasimo / Noto Sans TC 為自架（檔案在 assets/fonts/）；
+   Chiron Sung HK 與設計稿相同、自 Google Fonts 載入。
+   若要完全零外連，請把 Chiron Sung HK 也自架成子集（本頁只用到約 60 字）。
+   ============================================================ */
+@font-face { font-family: "Caprasimo"; src: url("fonts/Caprasimo-Regular.ttf") format("truetype"); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: "Noto Sans TC"; src: url("fonts/NotoSansTC-Regular.ttf") format("truetype"); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: "Noto Sans TC"; src: url("fonts/NotoSansTC-Medium.ttf") format("truetype"); font-weight: 500; font-style: normal; font-display: swap; }
+@font-face { font-family: "Noto Sans TC"; src: url("fonts/NotoSansTC-Bold.ttf") format("truetype"); font-weight: 700; font-style: normal; font-display: swap; }
