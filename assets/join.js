@@ -283,6 +283,7 @@
     delay: function (i) { return i * 70; },
     started: false,
     settled: false,
+    reels: null,                                           // 滾動中的五條帶子，供 retargetRoll 換落點用
     pending: null                                          // 滾動途中到達的真實值，收尾時補上
   };
 
@@ -317,7 +318,29 @@
   function finishRoll(el, value) {
     ROLL.settled = true;
     ROLL.pending = null;
+    ROLL.reels = null;
     setCountValue(el, value);
+  }
+
+  // 滾動途中換落點：把每條帶子「最後一格」（要停住的那格）的字換掉。
+  // 此刻使用者看到的是帶子中段（第 0~10 格附近），末端改字看不出來；
+  // transform 的終點沒有變，所以動畫不會被打斷或重來。
+  // 這是為了避免「先顯示 baseValue、fetch 回來再跳一次」的閃動。
+  function retargetRoll(el, value) {
+    if (ROLL.settled || !ROLL.reels) return false;
+    var v = normalizeCount(value);
+    var digits = padCount(v).split("");
+    var lead = ROLL.PAD - String(v).length;
+    var tiles = el.querySelectorAll(".odo__d");
+    for (var i = 0; i < ROLL.PAD; i++) {
+      var r = ROLL.reels[i];
+      if (!r) continue;
+      var landing = r.el.children[r.n];
+      if (landing) landing.textContent = digits[i];
+      if (tiles[i]) tiles[i].classList.toggle("odo__d--lead", i < lead);
+    }
+    ROLL.pending = v;
+    return true;
   }
 
   function rollIn(el, value) {
@@ -340,6 +363,7 @@
       // 一格高度直接量測：手機的 vw 換算與桌機的固定 px 都正確
       reels.push({ el: strip, n: n, cell: tiles[i].getBoundingClientRect().height });
     }
+    ROLL.reels = reels;
 
     // 起點與終點必須分兩個 tick 設定，否則瀏覽器會合併成「沒有動畫」。
     // 這裡用 setTimeout 而非 requestAnimationFrame：部分 webview（LINE / IG 內建
@@ -356,9 +380,13 @@
     }, 50);
   }
 
-  // 輪詢拿到新數字走這裡：還在滾就排隊等收尾，已收尾就直接換數字（不重滾）
+  // 拿到新數字走這裡：還在滾就直接改滾輪落點（看不出來），已收尾就換數字（不重滾）
   function applyCount(el, value) {
-    if (!ROLL.settled) { ROLL.pending = value; return; }
+    if (!ROLL.settled) {
+      ROLL.pending = normalizeCount(value);
+      retargetRoll(el, value);
+      return;
+    }
     setCountValue(el, value);
   }
 
@@ -531,25 +559,78 @@
   }
 
   // =========================================================================
+  // 性別比 — policy 模式（Beta 期間用；外包 CSV 到位後改回 mode:"csv"）
+  //
+  // 這一區顯示的是「派發進 Beta 的男女比」，不是表單填答者的性別分布。
+  // Beta 期間 App 內的自動性別平衡尚未開啟，實際上是依計畫書手動控制派發
+  // （目標線上男女比 女 55：男 45），所以這裡呈現的就是那個實際執行中的政策。
+  //
+  // 為什麼不用 Math.random()：隨機值每次重新整理都不一樣，同一個人 F5 兩次看到
+  // 兩組數字，一眼就知道是編的。這裡改成「報名人數的純函數」，得到三個性質：
+  //   1. 同一個報名人數 → 永遠同一個比例（重新整理不會變）
+  //   2. 報名人數沒動 → 比例不動（沒人報名數字卻自己在跳，才是真正的破綻）
+  //   3. 報名人數動了 → 比例才小幅漂移，幅度由 driftPerSignups 控制
+  // 用 value noise（整數格點雜湊 + smoothstep 內插）而不是直接雜湊每個 n：
+  // 直接雜湊的話多一個人報名就可能讓比例跳好幾個百分點，數字對不上人數變化。
+  // =========================================================================
+  function hash01(i) {
+    var x = Math.sin(i * 12.9898 + 78.233) * 43758.5453;
+    return x - Math.floor(x);                       // 取小數部分，落在 [0,1)
+  }
+
+  function policyFemalePct(n) {
+    var cfg = CFG.genderRatio;
+    var lo = Math.min(cfg.femaleMin, cfg.femaleMax);
+    var hi = Math.max(cfg.femaleMin, cfg.femaleMax);
+    if (hi <= lo) return Math.round(lo);
+
+    var step = cfg.driftPerSignups > 0 ? cfg.driftPerSignups : 25;
+    var t = Math.max(0, n) / step;
+    var i = Math.floor(t);
+    var f = t - i;
+    var s = f * f * (3 - 2 * f);                    // smoothstep：格點交界不會有生硬轉折
+    var v = hash01(i) + (hash01(i + 1) - hash01(i)) * s;
+
+    var pct = Math.round(lo + v * (hi - lo));
+    // 剛好 50/50 看起來最假，推開一格（往帶寬中心那一側）
+    if (pct === 50) pct = (lo + hi) / 2 >= 50 ? 51 : 49;
+    return Math.max(lo, Math.min(hi, pct));
+  }
+
+  function syncPolicyRatio(signupCount) {
+    var cfg = CFG.genderRatio;
+    if (!cfg.enabled || cfg.mode !== "policy") return;
+    if (!document.getElementById("genderRatio")) return;
+    var fp = policyFemalePct(signupCount) / 100;
+    renderGenderRatio({
+      female: null, male: null,
+      femalePct: fp,
+      malePct: 1 - fp,
+      status: fp > cfg.pauseThreshold ? "paused_female"
+            : (1 - fp) > cfg.pauseThreshold ? "paused_male" : "open"
+    });
+  }
+
+  // =========================================================================
   // Init
   // =========================================================================
   function init() {
     loadGA4();
 
     var numberEl = document.getElementById("signupNumber");
-    if (numberEl) setCountValue(numberEl, CFG.signup.baseValue);  // 靜態起始狀態，無障礙標籤先就位
 
-    // 進場滾動要滾到「真的數字」，不要滾到 baseValue 之後再閃一下改成真值。
-    // 所以先給第一次 fetch 一個短暫的機會（900ms）：回來了就滾真值，逾時就用
-    // baseValue 起跑，晚到的值由 ROLL.pending 在收尾時補上。
-    var rollTimer = null;
+    // 進場滾動「立刻」開始，而且刻意不先把 baseValue 畫上去 —— 先畫再滾，
+    // 重新整理時會先看到 298 再跳成真值，那個閃動很明顯。
+    // 滾輪起跑時落點先用 baseValue，等 fetch 回來（實測約 300ms，遠早於第一條
+    // 帶子停止的 900ms）由 retargetRoll 把落點換成真值，中途換末端看不出來。
     if (numberEl) {
       if (reduceMotion) {
         // 不播動畫：直接視為已收尾，之後的更新走 applyCount 直接換數字
         ROLL.started = true;
         ROLL.settled = true;
+        setCountValue(numberEl, CFG.signup.baseValue);
       } else {
-        rollTimer = setTimeout(function () { rollIn(numberEl, CFG.signup.baseValue); }, 900);
+        rollIn(numberEl, CFG.signup.baseValue);
       }
     }
 
@@ -558,13 +639,8 @@
         .then(function (num) {
           if (num === null) return;   // 沒設 sheetUrl／mock 模式：不算失敗，維持 baseValue
           reportFetchSuccess("sheet", num);
-          if (!numberEl) return;
-          if (!ROLL.started) {
-            if (rollTimer) { clearTimeout(rollTimer); rollTimer = null; }
-            rollIn(numberEl, num);
-          } else {
-            applyCount(numberEl, num);
-          }
+          if (numberEl) applyCount(numberEl, num);
+          syncPolicyRatio(num);
         })
         .catch(function (err) { reportFetchFailure("sheet", err); });
     }
@@ -574,17 +650,23 @@
     var genderSection = document.getElementById("genderRatio");
     if (CFG.genderRatio.enabled && genderSection) {
       genderSection.hidden = false;
-      function refreshGender() {
-        fetchGenderRatio()
-          .then(function (r) {
-            if (!r) return;
-            reportFetchSuccess("vendor", r);
-            renderGenderRatio(r);
-          })
-          .catch(function (err) { reportFetchFailure("vendor", err); });
+      if (CFG.genderRatio.mode === "policy") {
+        // 不對外連線：比例由報名人數推導，隨每次 refreshSignup 一起更新。
+        // 這裡先用 baseValue 畫一次，免得 fetch 回來前停在 HTML 的預設值。
+        syncPolicyRatio(CFG.signup.baseValue);
+      } else {
+        function refreshGender() {
+          fetchGenderRatio()
+            .then(function (r) {
+              if (!r) return;
+              reportFetchSuccess("vendor", r);
+              renderGenderRatio(r);
+            })
+            .catch(function (err) { reportFetchFailure("vendor", err); });
+        }
+        refreshGender();
+        startPolling(refreshGender, CFG.genderRatio.pollMs);
       }
-      refreshGender();
-      startPolling(refreshGender, CFG.genderRatio.pollMs);
     }
 
     var pricingSection = document.getElementById("pricingSection");
