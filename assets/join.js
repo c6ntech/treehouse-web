@@ -14,7 +14,7 @@
   // ---- Config：內建預設值 + 淺合併 window.JOIN_CONFIG，任一欄位打錯只影響該欄位 ----
   var DEFAULTS = {
     signup: { mode: "mock", baseValue: 298, round: "floor", sheetUrl: null, pollMs: 600000 },
-    genderRatio: { enabled: false, mode: "policy", femaleMin: 47, femaleMax: 53, changeEverySignups: 5, femaleBias: 0.5, csvUrl: null, pauseThreshold: 0.55, pollMs: 600000 },
+    genderRatio: { enabled: false, mode: "policy", femaleMin: 47, femaleMax: 53, changeEverySignups: 5, femaleBias: 1.0, csvUrl: null, pauseThreshold: 0.55, pollMs: 600000 },
     pricing: { enabled: false, amountLabel: "NT$240", trialDuration: "30 天" },
     countdown: { enabled: false, targetIso: null },
     cta: { mode: "form", formBaseUrl: "https://forms.gle/oKRJeB39md3gFTvH9", iosUrl: null, androidUrl: null },
