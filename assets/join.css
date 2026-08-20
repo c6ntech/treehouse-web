@@ -1,0 +1,821 @@
+/* ============================================================
+   Treehouse /join — Beta 招募轉換頁
+   視覺基準：App Store 截圖第一張（夜空 → 晚霞、星空、森林剪影）
+   手機優先｜零外連資源｜無 build｜webview 相容
+   ------------------------------------------------------------
+   對應結構檔：join/index.html
+   圖片資產：  assets/img/{starfield,forest,how-01..04}.webp、house-mark.svg
+   圖示：      輪播箭頭與定價收合箭頭 = 設計系統 navigation/Arrow 的原始向量
+               （direction=left / right / down），實心 currentColor，不是自己畫的
+   ============================================================ */
+
+/* ---------- 1. Tokens ---------- */
+:root {
+  /* ⚠ 首屏的所有尺寸都以這個單位表達：--u = 1 個「設計稿像素」。
+     等比取視窗寬 ÷ 390 與視窗高 ÷ 844 的較小值，所以整個首屏永遠是
+     設計稿的等比縮放 —— 不會有某一段間距被拉大／壓扁。
+     390 × 844 時 --u = 1px，與設計稿逐像素相同。 */
+  --u: min(0.25641vw, 0.11848vh);
+  --u: min(0.25641vw, 0.11848svh);
+  /* 兩個世界：窗外的天空 / 屋內的米色 */
+  --sky: linear-gradient(180deg,
+          #060624 0%, #0A2B5C 22%, #0D3D7A 38%, #3E5A94 56%,
+          #7A7CAA 70%, #BD9EB8 82%, #D95C26 93%, #EFA36B 100%);
+  --skin: #FCF4EC;
+  --skin-deep: #F2E5D9;
+  --card: #FFFFFF;
+
+  --wood: #793A0D;
+  --wood-soft: #AA6B3F;      /* 只用於 hover／大字，小字請用 --wood-mid */
+  --wood-mid: #8A5322;       /* AA 過關的暖棕（米色底 13px 以下用這個） */
+  --amber: #DFA344;
+  --pink: #D94C77;           /* 女性（米色底上，AA 4.6:1） */
+  --pink-deep: #DD6B91;      /* 女性色段底色（動態色層之下） */
+  --blue: #2C63AA;           /* 男性（米色底上，AA 5.1:1） */
+  --blue-ink: #2C63AA;
+  --amber-deep: #B4802C;
+  --night: #0D3D7A;
+  --green: #166534;
+
+  --ink: #2A2A2A;
+  --ink-2: #666666;
+  --ink-3: #999999;          /* 僅分隔線／非文字用；小字一律 --ink-2 */
+  --line: #EEEEEE;
+
+  --r-card: 20px;
+  --r-pill: 60px;
+  --gutter: 24px;
+
+  --shadow-warm: 0 4px 4px rgba(121, 58, 13, 0.1);
+  --shadow-card: 0 4px 4px rgba(0, 0, 0, 0.05);
+
+  /* 字體：全部自架。Caprasimo 只給字標使用。
+     --font-display 是 CJK 襯線（招牌感）；若不想額外加一份 CJK 襯線子集，
+     把下一行整個換成  --font-display: var(--font-text);  版面不會壞。 */
+  --font-brand: "Caprasimo", Georgia, serif;
+  --font-display: "Chiron Sung HK", "Noto Serif TC", "Songti TC", serif;
+  --font-text: "Noto Sans TC", system-ui, -apple-system, "Helvetica Neue", sans-serif;
+}
+
+/* ---------- 2. Base ---------- */
+*, *::before, *::after { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body.join {
+  margin: 0;
+  background: var(--skin);
+  color: var(--ink);
+  font-family: var(--font-text);
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+h1, h2, h3, p, ul { margin: 0; }
+ul { padding: 0; list-style: none; }
+img { display: block; max-width: 100%; }
+[hidden] { display: none !important; }
+
+.shell {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 0 var(--gutter);
+}
+
+/* 無障礙：skip-link 與看得見的 focus ring */
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 20;
+  padding: 12px 20px;
+  border-radius: 0 0 var(--r-card) 0;
+  background: var(--skin);
+  color: var(--wood);
+  font-weight: 700;
+  text-decoration: none;
+}
+.skip-link:focus { left: 0; }
+
+a:focus-visible,
+button:focus-visible,
+[tabindex]:focus-visible {
+  outline: 3px solid var(--amber);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+.hero a:focus-visible { outline-color: #FFE9C9; }
+
+/* ============================================================
+   3. 首屏 — 品牌 / slogan / 副標 / 人數看板 / 單一 CTA
+   四個元素必須同時在第一屏，因此高度用 svh + 彈性間距，
+   字級用 clamp 隨螢幕縮放，不靠捲動。
+   ============================================================ */
+.hero {
+  position: relative;
+  min-height: 100vh;
+  min-height: 100svh;
+  overflow: hidden;
+  background: #060624;
+  /* 漸層停點與設計稿完全相同（手機版）。不要改百分比 —— 晚霞的位置就是靠它定的。 */
+  background-image: linear-gradient(180deg,
+    #060624 0%, #0A2B5C 22%, #0D3D7A 38%, #3E5A94 56%,
+    #7A7CAA 70%, #BD9EB8 82%, #D95C26 93%, #EFA36B 100%);
+}
+
+.hero__sky { position: absolute; inset: 0; }
+
+/* 星空：設計稿是 390 寬的畫布上鋪 390×640 的圖、帶高 470px、位移 -10px。
+   下面全部換算成 vw（÷390），所以任何手機寬度都維持同樣的星點大小與密度。
+   ⚠ 不要改成 background-size: cover —— 那會把星點放大成兩三倍。 */
+.hero__stars {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 120.51vw;                 /* 470 / 390 */
+  background-image: url(img/starfield.webp);
+  background-repeat: no-repeat;
+  background-size: 100% 164.1vw;    /* 390 × 640 */
+  background-position: 0 -2.56vw;   /* -10px */
+  opacity: 0.9;
+}
+
+/* 森林：一張 SVG，剪影帶高 300px、上緣 90px 淡出；圖 700×700、往下位移 308px。
+   同樣以 ÷390 換算成 vw。<i> 是最底 26px 的半透明地面。 */
+.hero__forest {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  top: auto;
+  height: 76.92vw;                  /* 300 / 390 */
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(180deg, rgba(0,0,0,0) 0, rgba(0,0,0,1) 23.08vw);
+  mask-image: linear-gradient(180deg, rgba(0,0,0,0) 0, rgba(0,0,0,1) 23.08vw);
+}
+.hero__forest img {
+  position: absolute;
+  max-width: none;
+  left: 50%;
+  bottom: -78.97vw;                 /* -308 / 390 */
+  width: 179.49vw;                  /* 700 / 390 */
+  height: 179.49vw;
+  margin-left: -89.74vw;
+  opacity: 0.95;
+  filter: brightness(0.62) saturate(0.55);
+}
+.hero__forest i {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 6.67vw;                   /* 26px */
+  background: linear-gradient(180deg, rgba(11, 10, 18, 0) 0%, rgba(11, 10, 18, 0.42) 100%);
+}
+
+.hero__inner {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  min-height: 100vh;
+  min-height: 100svh;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: calc(58 * var(--u)) var(--gutter) calc(40 * var(--u));
+  text-align: center;
+}
+
+/* 兩段固定間距（設計稿 34 / 43），不再吸收剩餘高度 */
+.hero__gap { flex: none; height: calc(34 * var(--u)); }
+.hero__gap--wide { height: calc(41 * var(--u)); }
+
+.hero__wordmark {
+  font-family: var(--font-brand);
+  font-weight: 400;
+  font-size: calc(62 * var(--u));
+  line-height: 1;
+  letter-spacing: -0.062em;
+  color: var(--skin);
+  white-space: nowrap;
+  text-shadow: 0 4px 26px rgba(6, 6, 36, 0.45);
+}
+
+.hero__slogan {
+  margin-top: calc(26 * var(--u));
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: calc(27 * var(--u));
+  line-height: 1.24;
+  letter-spacing: 0.02em;
+  color: #FFFFFF;
+  white-space: nowrap;
+  text-shadow: 0 2px 14px rgba(6, 6, 36, 0.55);
+}
+
+.hero__sub {
+  margin-top: calc(12 * var(--u));
+  font-family: var(--font-display);
+  font-size: calc(15 * var(--u));
+  line-height: 1.5;
+  letter-spacing: 0.15em;
+  color: rgba(255, 255, 255, 0.85);
+  white-space: nowrap;
+}
+
+/* ---------- 報名人數看板（本頁主視覺） ---------- */
+.signboard { width: 100%; max-width: calc(320 * var(--u)); }
+
+.signboard__plaque {
+  padding: calc(20 * var(--u)) calc(22 * var(--u));
+  border-radius: var(--r-card);
+  background: var(--skin);
+  box-shadow: var(--shadow-warm), 0 14px 28px rgba(6, 6, 36, 0.3);
+}
+
+/* 文字置中（整體才不會偏右），樹屋標另外靠左停放 */
+.signboard__label {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(13 * var(--u));
+  line-height: calc(20 * var(--u));
+  letter-spacing: 0.14em;
+  color: var(--wood-mid);
+  white-space: nowrap;
+}
+/* 標貼在文字左邊（不是卡片左緣），文字本身仍然置中 */
+.signboard__label > span { position: relative; }
+.signboard__mark { position: absolute; right: 100%; top: 50%; margin-top: -7px; margin-right: 9px; width: 15px; height: 15px; opacity: 0.8; }
+
+.signboard__count {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: calc(10 * var(--u));
+  margin-top: calc(8 * var(--u));
+}
+/* 計數器：五位數，前導零淡化。JS 只需把數字補零成 5 碼、逐位寫入 .odo__d */
+.odo { display: flex; gap: calc(6 * var(--u)); }
+.odo__d {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: calc(46 * var(--u));
+  height: calc(68 * var(--u));
+  border-radius: 8px;
+  background: #F2E5D9;
+  box-shadow: inset 0 -1px 0 rgba(121, 58, 13, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: calc(44 * var(--u));
+  line-height: 1;
+  color: var(--wood);
+  font-variant-numeric: tabular-nums;
+}
+.odo__d--lead { background: #F6EADD; color: rgba(121, 58, 13, 0.26); }
+.signboard__unit {
+  padding-bottom: calc(6 * var(--u));
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: calc(20 * var(--u));
+  line-height: 1.2;
+  color: var(--wood);
+}
+/* 「即時更新中」——名額與性別比共用這一句（原本兩處各講一次，重複了） */
+.signboard__live {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: calc(8 * var(--u));
+  margin-top: calc(16 * var(--u));
+  padding-top: calc(14 * var(--u));
+  border-top: 1px solid rgba(121, 58, 13, 0.1);
+  font-size: calc(12 * var(--u));
+  line-height: calc(18 * var(--u));
+  color: var(--ink-2);
+  white-space: nowrap;
+}
+/* 綠點本身不動，外圈擴散淡出（脈波）——比呼吸更像「正在更新」 */
+.signboard__dot {
+  position: relative;
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-radius: 9999px;
+  background: var(--green);
+}
+.signboard__dot i {
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  background: var(--green);
+  animation: th-ring 2.8s ease-out infinite;
+}
+@keyframes th-ring {
+  0%        { transform: scale(1);   opacity: 0.55; }
+  70%, 100% { transform: scale(2.8); opacity: 0; }
+}
+
+@keyframes th-breathe {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.45; }
+}
+
+/* ---------- 唯一 CTA ---------- */
+.cta {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  max-width: 340px;
+  min-height: calc(56 * var(--u));
+  margin-top: calc(26 * var(--u));
+  padding: 0 28px;
+  border-radius: var(--r-pill);
+  background: var(--skin);
+  color: var(--wood);
+  font-size: calc(19 * var(--u));
+  line-height: normal;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-decoration: none;
+  box-shadow: var(--shadow-warm), 0 14px 34px rgba(6, 6, 36, 0.34);
+  transition: transform 180ms ease-out, background-color 180ms ease-out;
+}
+.cta:hover { background: #FFFFFF; }
+.cta:active { transform: translateY(2px); }
+
+/* ============================================================
+   4. 男女比例條（旗標）— 併入報名人數看板，同一張米色卡的下半部
+   人數與性別比是同一件事（名額狀態），分兩塊會讓首屏出現兩個競爭焦點。
+   寬度直接吃 JS 寫入的 style="width:NN%"，CSS 不做任何修正。
+   ============================================================ */
+.ratio {
+  margin-top: calc(18 * var(--u));
+  padding-top: calc(16 * var(--u));
+  border-top: 1px solid rgba(121, 58, 13, 0.14);
+  text-align: left;
+}
+
+.ratio__title {
+  font-size: calc(13 * var(--u));
+  font-weight: 400;
+  line-height: calc(20 * var(--u));
+  letter-spacing: 0.04em;
+  color: var(--wood-mid);
+  white-space: nowrap;
+}
+
+.ratio__bar {
+  position: relative;
+  display: flex;
+  height: calc(15 * var(--u));
+  margin-top: calc(10 * var(--u));
+  border-radius: 9999px;
+  overflow: hidden;
+  background: #EDE2D6;
+}
+/* 寬度變化是「即時更新」的主要動態；閒置時的動態是兩段顏色朝交界流動。
+   無縫循環的做法：色層寬 300%（三個完整週期、頭尾同色），每輪剛好平移一個週期，
+   linear 且不反向，所以看不到接點、也沒有「重播」感。
+   白色分隔線不是固定 50%，而是粉紅段右緣的 inset 陰影 —— 永遠貼在粉／藍真正的交界。 */
+.ratio__seg {
+  position: relative;
+  overflow: hidden;
+  transition: width 600ms ease-out;
+}
+.ratio__seg i {
+  position: absolute;
+  left: -100%;
+  top: 0;
+  width: 300%;
+  height: 100%;
+}
+.ratio__seg--f {
+  background: var(--pink-deep);
+  box-shadow: inset -1.5px 0 0 rgba(252, 244, 236, 0.9);
+}
+.ratio__seg--f i {
+  background: repeating-linear-gradient(90deg, #DD6B91 0%, #E2769A 2.7777%, #E77FA3 6.9444%, #ED91B0 11.1111%, #F2A0BC 16.6666%, #ED91B0 22.2222%, #E77FA3 26.3888%, #E2769A 30.5555%, #DD6B91 33.3333%);
+  animation: th-drift-in 7.6s linear infinite;
+}
+.ratio__seg--m { background: #3872B0; }
+.ratio__seg--m i {
+  background: repeating-linear-gradient(90deg, #3872B0 0%, #3F7BBB 2.7777%, #4785C5 6.9444%, #5595D4 11.1111%, #63A2DF 16.6666%, #5595D4 22.2222%, #4785C5 26.3888%, #3F7BBB 30.5555%, #3872B0 33.3333%);
+  animation: th-drift-out 7.6s linear infinite;
+}
+@keyframes th-drift-in  { from { transform: translateX(0) } to { transform: translateX(33.3333%) } }
+@keyframes th-drift-out { from { transform: translateX(0) } to { transform: translateX(-33.3333%) } }
+
+.ratio__legend { display: flex; align-items: center; justify-content: space-between; margin-top: calc(9 * var(--u)); }
+.ratio__item { display: flex; align-items: baseline; gap: calc(5 * var(--u)); }
+.ratio__key { font-size: calc(12 * var(--u)); line-height: calc(18 * var(--u)); color: var(--ink-2); }
+.ratio__note {
+  margin-top: calc(10 * var(--u));
+  font-size: calc(11 * var(--u));
+  line-height: calc(18 * var(--u));
+  color: var(--ink-2);
+  text-align: left;
+  text-wrap: pretty;
+}
+.ratio__pct { font-size: calc(15 * var(--u)); line-height: calc(20 * var(--u)); font-weight: 700; font-variant-numeric: tabular-nums; }
+.ratio__pct--f { color: #C43C68; }
+.ratio__pct--m { color: var(--blue-ink); }
+
+/* ============================================================
+   5. 怎麼玩 — IG Story 式輪播
+   照片滿版不裁切：舞台用 aspect-ratio 鎖成 1320:2868，圖片 object-fit: contain。
+   點擊區是兩顆透明按鈕（左 34% / 右 46%），拖曳由 join.js 處理。
+   #howTrack 仍是捲軸容器的角色，但改成 transform 驅動（不再是 overflow-x: auto）。
+   ============================================================ */
+.how { padding: 34px 0 34px; }
+
+.how__head { display: block; text-align: center; }
+.how__title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 22px;
+  line-height: 1.3;
+  color: var(--wood);
+  white-space: nowrap;
+}
+
+.how__stage {
+  position: relative;
+  width: 100%;
+  margin-top: 20px;
+  aspect-ratio: 1320 / 2868;
+  overflow: hidden;
+  background: #060624;
+  touch-action: pan-y;
+  user-select: none;
+  cursor: grab;
+}
+.how__reel {
+  display: flex;
+  height: 100%;
+  will-change: transform;
+  transition: transform 360ms cubic-bezier(.22, .61, .36, 1);
+}
+/* join.js 加上這個 class 時不要動畫（拖曳中、以及循環時的靜默回中） */
+.how__reel.is-static { transition: none; }
+.how__shot {
+  flex: 0 0 100%;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;     /* 完整呈現，不裁切 */
+  background: #060624;
+  pointer-events: none;
+}
+
+/* 頂部四段進度條 = 唯一的「還有幾張」提示 */
+.how__bars {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  display: flex;
+  gap: 4px;
+  padding: 14px 14px 0;
+}
+.how__bars span {
+  flex: 1 1 0;
+  height: 3px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.3);
+  overflow: hidden;
+}
+.how__bars i {
+  display: block;
+  height: 3px;
+  border-radius: 2px;
+  background: #FFFFFF;
+  transition: width 300ms ease-out;
+}
+
+/* 點擊區：左 34% 上一張、右 46% 下一張（右邊給大一點，符合單手習慣） */
+.how__arrow {
+  position: absolute;
+  top: 34px;
+  bottom: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+.how__arrow--prev { left: 0; width: 34%; }
+.how__arrow--next { right: 0; width: 46%; }
+
+.how__nudge {
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  margin-top: -14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.9);
+  color: #3A2E22;
+  pointer-events: none;
+  animation: th-tap 4.6s ease-in-out infinite;
+}
+.how__nudge svg { display: block; }
+@keyframes th-tap {
+  0%, 66%, 100% { opacity: 0.28; transform: translateX(0); }
+  80%           { opacity: 0.72; transform: translateX(5px); }
+}
+
+/* ============================================================
+   6. 沒有免費版本（旗標）— 可展開/收合
+   ============================================================ */
+.pricing { padding: 16px 0 0; }
+
+.pricing__card {
+  border-radius: var(--r-card);
+  background: var(--card);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+}
+.pricing__toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  min-height: 56px;
+  padding: 18px 22px;
+  border: 0;
+  background: transparent;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.pricing__heading {
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 700;
+  color: var(--wood);
+}
+.pricing__chevron { flex: none; display: flex; align-items: center; justify-content: center; width: 12px; height: 12px; color: var(--wood-mid); transition: transform 200ms ease-out; }
+.pricing__chevron svg { display: block; width: 10px; height: 6.5px; }
+.pricing__toggle[aria-expanded="true"] .pricing__chevron { transform: rotate(180deg); }
+
+.pricing__body { padding: 0 22px 22px; }
+.pricing__toggle[aria-expanded="false"] + .pricing__body { display: none; }
+
+.pricing__lead { font-size: 14px; line-height: 24px; color: var(--ink); }
+.pricing__lead b { font-weight: 700; color: var(--wood); }
+
+.pricing__list {
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 13px;
+  line-height: 22px;
+  color: var(--ink-2);
+}
+.pricing__list li { display: flex; gap: 10px; }
+.pricing__list li::before { content: "·"; flex: none; color: var(--ink-2); }
+
+/* ============================================================
+   7. 倒數（旗標）— 首屏空天處的玻璃計時器，dd:hh:mm:ss
+   玻璃比照設計系統：白 14% + 1px inset 白邊 + blur(10px)（只用在天空上）
+   ============================================================ */
+.hero__countdown {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: calc(12 * var(--u));
+  width: 100%;
+}
+.hero__countdown-label {
+  font-size: calc(11 * var(--u));
+  line-height: calc(16 * var(--u));
+  letter-spacing: 0.16em;
+  color: rgba(255, 255, 255, 0.7);
+  white-space: nowrap;
+  text-shadow: 0 2px 12px rgba(6, 6, 36, 0.6);
+}
+.hero__countdown-chip {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  width: 100%;
+  max-width: calc(320 * var(--u));   /* 與 .signboard 同寬 */
+  box-sizing: border-box;
+  padding: calc(11 * var(--u)) calc(22 * var(--u));
+  border-radius: var(--r-card);
+  background: rgba(255, 255, 255, 0.1);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.3), 0 8px 22px rgba(6, 6, 36, 0.22);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+}
+/* 不支援 backdrop-filter 的 webview：退回稍實一點的白，仍然可讀 */
+@supports not ((backdrop-filter: blur(10px)) or (-webkit-backdrop-filter: blur(10px))) {
+  .hero__countdown-chip { background: rgba(255, 255, 255, 0.16); }
+}
+
+/* 倒數是次要資訊：字級、透明度都刻意低於米色看板上的 00298 */
+.cd-unit { display: flex; flex-direction: column; align-items: center; }
+.cd-unit b {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: calc(26 * var(--u));
+  line-height: 1.04;
+  color: rgba(255, 255, 255, 0.94);
+  font-variant-numeric: tabular-nums;
+}
+.cd-unit i {
+  margin-top: calc(2 * var(--u));
+  font-size: calc(10 * var(--u));
+  line-height: calc(14 * var(--u));
+  letter-spacing: 0.1em;
+  font-style: normal;
+  color: rgba(255, 255, 255, 0.62);
+}
+.hero__countdown-chip--live { align-items: center; gap: 14px; padding: 16px 26px; }
+.cd-live-dot {
+  flex: none;
+  width: 11px;
+  height: 11px;
+  border-radius: 9999px;
+  background: #8FE3A8;
+  box-shadow: 0 0 14px 4px rgba(143, 227, 168, 0.6);
+  animation: th-breathe 1.8s ease-in-out infinite;
+}
+.cd-live-text {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(21px, 6.6vw, 26px);
+  line-height: 1.2;
+  letter-spacing: 0.03em;
+  color: #FFFFFF;
+  white-space: nowrap;
+}
+
+.cd-sep {
+  padding-bottom: calc(15 * var(--u));
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: calc(19 * var(--u));
+  line-height: 1.04;
+  color: rgba(255, 255, 255, 0.36);
+}
+
+/* ============================================================
+   8. Footer
+   ============================================================ */
+.site-footer {
+  margin-top: 34px;
+  padding: 28px 0 34px;
+  background: var(--skin-deep);
+}
+.site-footer__wordmark {
+  font-family: var(--font-brand);
+  font-size: 26px;
+  line-height: 1;
+  letter-spacing: -0.062em;
+  color: var(--wood);
+}
+.site-footer__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 20px;
+  margin-top: 16px;
+}
+.site-footer__links a {
+  font-size: 13px;
+  line-height: 22px;
+  color: var(--wood);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.site-footer__links a:hover { color: var(--wood-soft); text-decoration: underline; }
+.site-footer__copy { margin-top: 18px; font-size: 12px; line-height: 18px; color: var(--wood-mid); }
+
+/* ============================================================
+   9. 響應式
+   ============================================================ */
+
+/* 矮螢幕不再需要另一套字級 —— --u 已經把整個首屏等比縮到放得下。
+   （原本兩層 max-height 覆寫已移除；它們會破壞與設計稿的比例。） */
+
+/* 桌機／平板：首屏改左右兩欄，輪播露出箭頭 */
+@media (min-width: 900px) {
+  :root {
+  /* ⚠ 首屏的所有尺寸都以這個單位表達：--u = 1 個「設計稿像素」。
+     等比取視窗寬 ÷ 390 與視窗高 ÷ 844 的較小值，所以整個首屏永遠是
+     設計稿的等比縮放 —— 不會有某一段間距被拉大／壓扁。
+     390 × 844 時 --u = 1px，與設計稿逐像素相同。 */
+  --u: min(0.25641vw, 0.11848vh);
+  --u: min(0.25641vw, 0.11848svh); --gutter: 40px; }
+
+  .shell { max-width: 1120px; }
+
+  /* 桌機對應設計稿的 1280 × 760 畫布。首屏高度也照設計稿封頂，
+     否則在很高的視窗上整個構圖會被拉開、晚霞位置跑掉。 */
+  .hero { min-height: 0; height: min(100svh, 860px); background-image: linear-gradient(180deg,
+    #060624 0%, #0A2B5C 24%, #0D3D7A 40%, #3E5A94 58%,
+    #7A7CAA 72%, #BD9EB8 84%, #D95C26 94%, #EFA36B 100%); }
+  .hero__inner { min-height: 0; height: 100%; }
+  .hero__stars { height: 440px; background-size: 100% 54.69vw; background-position: 0 -0.78vw; }
+  .hero__forest { height: 300px;
+    -webkit-mask-image: linear-gradient(180deg, rgba(0,0,0,0) 0, rgba(0,0,0,1) 100px);
+    mask-image: linear-gradient(180deg, rgba(0,0,0,0) 0, rgba(0,0,0,1) 100px); }
+  .hero__forest img { width: 125vw; height: 125vw; margin-left: -62.5vw; bottom: -55vw; }
+  .hero__forest i { height: 44px; }
+
+  .hero__inner {
+    padding: 77px var(--gutter);
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "brand board"
+      "slogan board"
+      "sub board"
+      "count board"
+      "cta board";
+    align-content: center;
+    align-items: start;
+    justify-items: start;
+    gap: 0 72px;
+    max-width: 1200px;
+    padding: 80px var(--gutter);
+    text-align: left;
+  }
+  .hero__wordmark { grid-area: brand; font-size: 104px; }
+  .hero__slogan   { grid-area: slogan; margin-top: 30px; font-size: clamp(32px, 3.4vw, 44px); }
+  .hero__sub      { grid-area: sub; margin-top: 16px; font-size: clamp(18px, 1.7vw, 22px); }
+  .hero__gap      { display: none; }
+  .signboard      { grid-area: board; align-self: center; width: 420px; max-width: none; margin-top: -13px; }
+  .signboard__plaque { padding: 32px 34px 30px; box-shadow: var(--shadow-warm), 0 18px 36px rgba(6, 6, 36, 0.3); }
+  .signboard__label { font-size: 16px; line-height: 24px; }
+  .signboard__mark { margin-top: -9px; margin-right: 11px; width: 19px; height: 19px; }
+  .odo { gap: 8px; }
+  .odo__d { width: 62px; height: 92px; font-size: 60px; }
+  .signboard__unit { font-size: 28px; }
+  .signboard__live { margin-top: 18px; padding-top: 16px; font-size: 13px; line-height: 18px; }
+  .signboard__dot { width: 7px; height: 7px; }
+  .cta { grid-area: cta; width: 300px; min-height: 62px; margin-top: 42px; font-size: 21px; }
+
+  .ratio { margin-top: 22px; padding-top: 20px; }
+  .ratio__title { font-size: 15px; line-height: 22px; }
+  .ratio__bar { height: 18px; }
+    .ratio__legend { margin-top: 11px; }
+  .ratio__key { font-size: 14px; line-height: 20px; }
+  .ratio__note { margin-top: 12px; font-size: 12px; line-height: 20px; }
+  .ratio__pct { font-size: 17px; line-height: 22px; }
+
+  .how { padding: 56px 0 52px; }
+  .how__title { font-size: 30px; }
+  /* 桌機：舞台改成寬版深色台，照片維持原比例置中（依然不裁切） */
+  .how__stage { aspect-ratio: auto; height: min(700px, 78vh); margin-top: 24px; }
+  .how__shot { object-fit: contain; padding: 30px 0; }
+  .how__bars { left: 50%; right: auto; width: 400px; margin-left: -200px; gap: 6px; padding-top: 18px; }
+  .how__bars span, .how__bars i { height: 4px; }
+  .how__arrow { top: 46px; }
+  .how__nudge { right: 44px; margin-top: -24px; width: 48px; height: 48px; background: rgba(255,255,255,0.16); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.4); color: #FFFFFF; }
+
+  .pricing { padding: 24px 0 0; }
+  .pricing__heading { font-size: 18px; line-height: 26px; }
+  .pricing__lead { font-size: 16px; }
+
+  .hero__countdown { grid-area: count; align-items: flex-start; margin-top: 34px; gap: 12px; }
+  .hero__countdown-label { font-size: 11px; line-height: 16px; }
+  .hero__countdown-chip { max-width: 420px; padding: 14px 26px; }
+  .cd-unit b { font-size: 32px; }
+  .cd-unit i { font-size: 11px; line-height: 16px; }
+  .cd-sep { font-size: 23px; padding-bottom: 18px; }
+  .cd-live-text { font-size: 32px; }
+  .hero__countdown-chip--live { padding: 18px 30px; }
+
+  .site-footer { margin-top: 64px; padding: 40px 0 48px; }
+  .site-footer__wordmark { font-size: 32px; }
+}
+
+/* ============================================================
+   10. prefers-reduced-motion — 動畫全部關掉（計數動畫由 join.js 直接跳終值）
+   ============================================================ */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+  .how__track { scroll-behavior: auto; }
+}
