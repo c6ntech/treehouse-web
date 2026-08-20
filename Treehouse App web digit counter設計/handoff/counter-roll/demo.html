@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>計數器進場滾動 · 11a 依序滾入</title>
+<link rel="stylesheet" href="../assets/fonts.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chiron+Sung+HK:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../assets/join.css">
+<link rel="stylesheet" href="odometer.css">
+<style>
+  body { margin: 0; background: #DAD3CA; font-family: "Noto Sans TC", system-ui, sans-serif; }
+  .stage { display: flex; flex-direction: column; align-items: center; gap: 18px; padding: 48px 24px; }
+  .hint { font-size: 14px; line-height: 22px; color: #5C4B3A; text-align: center; max-width: 420px; }
+  .board { width: 340px; background: #FCF4EC; border-radius: 20px; padding: 20px 22px; box-sizing: border-box;
+           box-shadow: 0 4px 4px rgba(121,58,13,.1), 0 14px 28px rgba(6,6,36,.14); text-align: center; }
+  /* demo 固定用手機畫布的 1px = 1 設計稿像素 */
+  .board { --u: 1px; }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="hint">11a 依序滾入。只在載入時播放一次 —— 想重看請重新整理（或按下方按鈕，僅供 demo）。</div>
+  <div class="board">
+    <p class="signboard__count" style="justify-content:center">
+      <span class="odo" id="signupNumber" data-value="298">
+        <b class="odo__d odo__d--lead">0</b><b class="odo__d odo__d--lead">0</b><b class="odo__d">2</b><b class="odo__d">9</b><b class="odo__d">8</b>
+      </span>
+      <b class="signboard__unit">人</b>
+    </p>
+  </div>
+  <button type="button" onclick="location.reload()" style="border:0;cursor:pointer;background:#793A0D;color:#FCF4EC;border-radius:9999px;padding:10px 24px;font-family:inherit;font-size:15px;font-weight:700">重新整理看一次</button>
+  <div class="hint">改 <code>data-value</code> 成任何數字（例如 1234、10500）都適用；前導零會自動變淡色。<br>之後的即時更新請呼叫 <code>setSignupCount(320)</code> —— 直接換數字、不重滾。</div>
+</div>
+<script src="odometer.js"></script>
+</body>
+</html>

@@ -1,0 +1,44 @@
+/* ============================================================
+   報名人數計數器 — 進場滾動（11a 依序滾入）
+   附加樣式。不改任何既有規則，只讓 .odo__d 變成「滾輪視窗」。
+   格子的尺寸、圓角、底色、陰影、字級全部沿用 join.css 既有的 .odo__d，
+   這裡只負責裁切與位移。
+   ============================================================ */
+
+/* 一格的高度＝一個滾輪單元。必須與 .odo__d 的 height 完全相同。 */
+.odo { --cell: calc(68 * var(--u)); }
+
+.odo__d {
+  position: relative;
+  overflow: hidden;          /* 滾輪要被裁在格子裡 */
+  padding: 0;
+}
+
+/* 直排的數字帶。位移量由 JS 直接寫 transform（px）——
+   不要改成 translateY(calc(var(--n) * ...))：自訂屬性的變化不會被
+   transition 內插，transform 會瞬間跳到終點，看起來完全沒有動畫。 */
+.odo__reel {
+  display: flex;
+  flex-direction: column;
+  will-change: transform;
+  transform: translateY(0);
+}
+
+/* 每一個數字單元。字的樣式從 .odo__d 繼承，不要在這裡重新宣告。 */
+.odo__c {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: var(--cell);
+}
+
+@media (min-width: 900px) {
+  .odo { --cell: 92px; }     /* 桌機 .odo__d 的 height */
+}
+
+/* 尊重系統偏好：關閉動畫時直接顯示結果 */
+@media (prefers-reduced-motion: reduce) {
+  .odo__reel { transition: none !important; }
+}
