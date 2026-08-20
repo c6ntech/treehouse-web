@@ -284,7 +284,8 @@
     started: false,
     settled: false,
     reels: null,                                           // 滾動中的五條帶子，供 retargetRoll 換落點用
-    pending: null                                          // 滾動途中到達的真實值，收尾時補上
+    pending: null,                                         // 滾動途中到達的真實值，收尾時補上
+    guard: null                                            // 滾動期間盯格高變化的計時器，見 resyncReels
   };
 
   function padCount(v) {
@@ -319,7 +320,33 @@
     ROLL.settled = true;
     ROLL.pending = null;
     ROLL.reels = null;
+    if (ROLL.guard) { clearInterval(ROLL.guard); ROLL.guard = null; }
     setCountValue(el, value);
+  }
+
+  // 位移是寫死的 px（見 join.css §11 註解：改用 CSS 變數的話 transition 不會內插），
+  // 但格子高度是 calc(68 * var(--u))，而 --u 綁在 vw / svh 上。只要滾動途中可視區
+  // 尺寸變了 —— 手機第一次載入網址列收合、桌機捲軸出現、轉向 —— 格高就會變，
+  // 而位移還停在用舊格高算出來的數字，帶子會停在錯的格子上。
+  //
+  // 實測：滾動中把 390x844 改成 390x700，格高 68→56.4，位移仍是 -1360px，
+  // 落點索引變成 24.11（帶子只有 21 格），畫面就卡住不動直到收尾才跳成正確數字。
+  // 手機上網址列收合會讓可視高度長約一成，20 × 0.9 ≈ 18，而第 18 格剛好是「8」，
+  // 所以症狀是「第一次打開卡在 888」。
+  //
+  // 所以滾動期間持續盯著格高，一有變化就用新的格高重算位移。transition 會自己
+  // 平順地接到新目標，不會斷。
+  function resyncReels(el) {
+    if (ROLL.settled || !ROLL.reels) return;
+    var tiles = el.querySelectorAll(".odo__d");
+    for (var i = 0; i < ROLL.reels.length; i++) {
+      var r = ROLL.reels[i];
+      if (!r || !tiles[i]) continue;
+      var h = tiles[i].getBoundingClientRect().height;
+      if (!h || Math.abs(h - r.cell) < 0.5) continue;
+      r.cell = h;
+      r.el.style.transform = "translateY(" + (-r.n * h) + "px)";
+    }
   }
 
   // 滾動途中換落點：把每條帶子「最後一格」（要停住的那格）的字換掉。
@@ -374,6 +401,11 @@
         r.el.style.transition = "transform " + ROLL.dur(i) + "ms " + ROLL.EASE + " " + ROLL.delay(i) + "ms";
         r.el.style.transform = "translateY(" + (-r.n * r.cell) + "px)";
       }
+      // 滾動期間盯格高。用輪詢而不是只掛 resize：捲軸出現／字型載完造成的重排
+      // 不一定會觸發 resize，但一樣會改變 --u。整段動畫不到兩秒，成本可以忽略。
+      if (ROLL.guard) clearInterval(ROLL.guard);
+      ROLL.guard = setInterval(function () { resyncReels(el); }, 100);
+
       setTimeout(function () {
         finishRoll(el, ROLL.pending !== null ? ROLL.pending : v);
       }, ROLL.dur(ROLL.PAD - 1) + ROLL.delay(ROLL.PAD - 1) + 60);
