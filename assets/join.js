@@ -230,8 +230,6 @@
   // 一律補零成 5 碼後「逐位」寫入，並依實際位數 toggle .odo__d--lead
   // （前導零淡化）。位數固定 5（上限 99999）。
   // =========================================================================
-  var countAnim = { raf: null, from: CFG.signup.baseValue };
-
   function normalizeCount(n) {
     if (CFG.signup.round === "floor") n = Math.floor(n);
     return Math.max(0, n);
@@ -267,30 +265,101 @@
     el.setAttribute("aria-label", String(v));   // 單位「人」在隔壁的 .signboard__unit，這裡不要重複
   }
 
-  function animateCountTo(el, target) {
-    if (countAnim.raf) { cancelAnimationFrame(countAnim.raf); countAnim.raf = null; }
-    if (reduceMotion) {
-      setCountValue(el, target);
-      countAnim.from = target;
-      return;
+  // =========================================================================
+  // 進場滾動（11a 依序滾入）
+  // 來源：Claude Design 交付包 counter-roll/odometer.js，接上既有的 setCountValue
+  // 以保留 data-value / aria-label（交付包原版沒寫 aria-label，直接用會掉無障礙標籤）。
+  //
+  // 規則（交付包 README，照做）：
+  //   1. 只在頁面載入時播放一次，不重播、不 loop。
+  //   2. 之後輪詢拿到新數字直接換數字，不重滾 —— 每十分鐘重滾一次會非常吵。
+  //   3. prefers-reduced-motion 時不播放，直接顯示最終數字。
+  // =========================================================================
+  var ROLL = {
+    PAD: 5,
+    LOOPS: 2,                                            // 進場前空轉兩圈
+    EASE: "cubic-bezier(.16,.84,.3,1)",                   // 快進、長煞停、不回彈
+    dur: function (i) { return 900 + i * 180; },           // 右邊比左邊晚停
+    delay: function (i) { return i * 70; },
+    started: false,
+    settled: false,
+    pending: null                                          // 滾動途中到達的真實值，收尾時補上
+  };
+
+  function padCount(v) {
+    var s = String(Math.max(0, parseInt(v, 10) || 0));
+    while (s.length < ROLL.PAD) s = "0" + s;
+    return s.slice(-ROLL.PAD);
+  }
+
+  function reelCell(ch) {
+    var c = document.createElement("span");
+    c.className = "odo__c";
+    c.textContent = ch;
+    return c;
+  }
+
+  // 建一條「0-9 × LOOPS + 目標數字」的帶子，回傳目標索引
+  function buildReel(tile, digit) {
+    var reel = document.createElement("span");
+    reel.className = "odo__reel";
+    for (var l = 0; l < ROLL.LOOPS; l++) {
+      for (var n = 0; n < 10; n++) reel.appendChild(reelCell(String(n)));
     }
-    var from = countAnim.from;
-    var start = null;
-    var duration = 900;
-    function step(ts) {
-      if (start === null) start = ts;
-      var p = Math.min(1, (ts - start) / duration);
-      var eased = 1 - Math.pow(1 - p, 3);
-      paintOdometer(el, from + (target - from) * eased);
-      if (p < 1) {
-        countAnim.raf = requestAnimationFrame(step);
-      } else {
-        setCountValue(el, target);   // 落定才寫 data-value / aria-label
-        countAnim.from = target;
-        countAnim.raf = null;
+    reel.appendChild(reelCell(digit));
+    tile.textContent = "";
+    tile.appendChild(reel);
+    return reel.children.length - 1;
+  }
+
+  // 收尾：把帶子換回單一數字，並寫回 data-value / aria-label。
+  // 靜止狀態因此與設計稿完全相同 —— 對稿工具量到的是這個狀態。
+  function finishRoll(el, value) {
+    ROLL.settled = true;
+    ROLL.pending = null;
+    setCountValue(el, value);
+  }
+
+  function rollIn(el, value) {
+    if (ROLL.started) return;
+    ROLL.started = true;
+
+    var v = normalizeCount(value);
+    var tiles = el.querySelectorAll(".odo__d");
+    if (reduceMotion || tiles.length !== ROLL.PAD) { finishRoll(el, v); return; }
+
+    var digits = padCount(v).split("");
+    var lead = ROLL.PAD - String(v).length;
+    var reels = [];
+    for (var i = 0; i < ROLL.PAD; i++) {
+      tiles[i].classList.toggle("odo__d--lead", i < lead);
+      var n = buildReel(tiles[i], digits[i]);
+      var strip = tiles[i].firstChild;
+      strip.style.transition = "none";
+      strip.style.transform = "translateY(0)";
+      // 一格高度直接量測：手機的 vw 換算與桌機的固定 px 都正確
+      reels.push({ el: strip, n: n, cell: tiles[i].getBoundingClientRect().height });
+    }
+
+    // 起點與終點必須分兩個 tick 設定，否則瀏覽器會合併成「沒有動畫」。
+    // 這裡用 setTimeout 而非 requestAnimationFrame：部分 webview（LINE / IG 內建
+    // 瀏覽器、背景分頁）會延後或丟棄 rAF 回呼，滾輪會永遠停在起點。
+    setTimeout(function () {
+      for (var i = 0; i < ROLL.PAD; i++) {
+        var r = reels[i];
+        r.el.style.transition = "transform " + ROLL.dur(i) + "ms " + ROLL.EASE + " " + ROLL.delay(i) + "ms";
+        r.el.style.transform = "translateY(" + (-r.n * r.cell) + "px)";
       }
-    }
-    countAnim.raf = requestAnimationFrame(step);
+      setTimeout(function () {
+        finishRoll(el, ROLL.pending !== null ? ROLL.pending : v);
+      }, ROLL.dur(ROLL.PAD - 1) + ROLL.delay(ROLL.PAD - 1) + 60);
+    }, 50);
+  }
+
+  // 輪詢拿到新數字走這裡：還在滾就排隊等收尾，已收尾就直接換數字（不重滾）
+  function applyCount(el, value) {
+    if (!ROLL.settled) { ROLL.pending = value; return; }
+    setCountValue(el, value);
   }
 
   // =========================================================================
@@ -468,14 +537,34 @@
     loadGA4();
 
     var numberEl = document.getElementById("signupNumber");
-    if (numberEl) setCountValue(numberEl, CFG.signup.baseValue);
+    if (numberEl) setCountValue(numberEl, CFG.signup.baseValue);  // 靜態起始狀態，無障礙標籤先就位
+
+    // 進場滾動要滾到「真的數字」，不要滾到 baseValue 之後再閃一下改成真值。
+    // 所以先給第一次 fetch 一個短暫的機會（900ms）：回來了就滾真值，逾時就用
+    // baseValue 起跑，晚到的值由 ROLL.pending 在收尾時補上。
+    var rollTimer = null;
+    if (numberEl) {
+      if (reduceMotion) {
+        // 不播動畫：直接視為已收尾，之後的更新走 applyCount 直接換數字
+        ROLL.started = true;
+        ROLL.settled = true;
+      } else {
+        rollTimer = setTimeout(function () { rollIn(numberEl, CFG.signup.baseValue); }, 900);
+      }
+    }
 
     function refreshSignup() {
       fetchSignupCount()
         .then(function (num) {
-          if (num === null) return;
+          if (num === null) return;   // 沒設 sheetUrl／mock 模式：不算失敗，維持 baseValue
           reportFetchSuccess("sheet", num);
-          if (numberEl) animateCountTo(numberEl, num);
+          if (!numberEl) return;
+          if (!ROLL.started) {
+            if (rollTimer) { clearTimeout(rollTimer); rollTimer = null; }
+            rollIn(numberEl, num);
+          } else {
+            applyCount(numberEl, num);
+          }
         })
         .catch(function (err) { reportFetchFailure("sheet", err); });
     }

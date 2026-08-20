@@ -819,3 +819,51 @@ button:focus-visible,
   }
   .how__track { scroll-behavior: auto; }
 }
+
+/* ============================================================
+   11. 計數器進場滾動（11a 依序滾入）
+   來源：Claude Design 交付包 counter-roll/odometer.css，原樣併入。
+   不改上面 §.odo__d 的任何既有規則，只讓格子變成「滾輪視窗」——
+   尺寸／圓角／底色／陰影／字級全部繼承既有規則，這裡只負責裁切與位移。
+   動畫結束後 join.js 會把帶子收回單一數字，所以靜止狀態與設計稿完全相同。
+   ============================================================ */
+
+/* 一格的高度＝一個滾輪單元。必須與 .odo__d 的 height 完全相同（見 §計數器）。 */
+.odo { --cell: calc(68 * var(--u)); }
+
+.odo__d {
+  position: relative;
+  overflow: hidden;          /* 滾輪要被裁在格子裡 */
+  padding: 0;
+}
+
+/* 直排的數字帶。位移量由 JS 直接寫 transform（px）——
+   不要改成 translateY(calc(var(--n) * ...))：自訂屬性的變化不會被
+   transition 內插，transform 會瞬間跳到終點，看起來完全沒有動畫。 */
+.odo__reel {
+  display: flex;
+  flex-direction: column;
+  align-self: flex-start;    /* .odo__d 是 align-items:center 的 flex 容器，
+                                帶子比格子高，不釘在頂端的話起點會被置中偏移 */
+  will-change: transform;
+  transform: translateY(0);
+}
+
+/* 每一個數字單元。字的樣式從 .odo__d 繼承，不要在這裡重新宣告。 */
+.odo__c {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: var(--cell);
+}
+
+@media (min-width: 900px) {
+  .odo { --cell: 92px; }     /* 桌機 .odo__d 的 height（見 §計數器 桌機覆寫） */
+}
+
+/* 尊重系統偏好：關閉動畫時直接顯示結果 */
+@media (prefers-reduced-motion: reduce) {
+  .odo__reel { transition: none !important; }
+}

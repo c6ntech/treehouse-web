@@ -19,7 +19,12 @@ window.JOIN_CONFIG = {
     // B1 是數字（由這份表用 IMPORTRANGE 從私有的表單回應表拉一個已經算好的值進來）。
     // 絕對不可以填表單回應原始試算表的網址 —— 那份含報名者 IG ID、性別、年齡，
     // 一旦被公開讀取就是個資外洩。
-    sheetUrl: null,             // 貼 Google Sheet 網址（編輯連結或發布連結都可以，程式會自動取出 ID）
+    // ✅ 這份是專用的「for Web Stats」儀表板表：整份只有 A1:B3 三列
+    //    （signup_count / 起算值 / 新表單報名數），B1 是頁面實際讀的那一格。
+    //    新表單報名數由 IMPORTRANGE 從私有的表單回應表拉「已算好的一個數字」進來，
+    //    公開的這份不含任何個資。共用權限必須維持「知道連結的任何人 → 檢視者」，
+    //    給到編輯者的話別人可以自己寫 IMPORTRANGE 把私有表整包拉出來。
+    sheetUrl: "https://docs.google.com/spreadsheets/d/105ymHSvKcdbQ33xiKtSXF0DPkltpWZYmR2frPQCMTPs/edit",
     pollMs: 600000               // 10 分鐘重新抓一次
   },
 
