@@ -14,7 +14,7 @@
   // ---- Config：內建預設值 + 淺合併 window.JOIN_CONFIG，任一欄位打錯只影響該欄位 ----
   var DEFAULTS = {
     signup: { mode: "mock", baseValue: 298, round: "floor", sheetUrl: null, pollMs: 600000 },
-    genderRatio: { enabled: false, csvUrl: null, pauseThreshold: 0.55, pollMs: 600000 },
+    genderRatio: { enabled: false, mode: "policy", femaleMin: 47, femaleMax: 53, changeEverySignups: 5, femaleBias: 0.5, csvUrl: null, pauseThreshold: 0.55, pollMs: 600000 },
     pricing: { enabled: false, amountLabel: "NT$240", trialDuration: "30 天" },
     countdown: { enabled: false, targetIso: null },
     cta: { mode: "form", formBaseUrl: "https://forms.gle/oKRJeB39md3gFTvH9", iosUrl: null, androidUrl: null },
@@ -614,12 +614,17 @@
   // （目標線上男女比 女 55：男 45），所以這裡呈現的就是那個實際執行中的政策。
   //
   // 為什麼不用 Math.random()：隨機值每次重新整理都不一樣，同一個人 F5 兩次看到
-  // 兩組數字，一眼就知道是編的。這裡改成「報名人數的純函數」，得到三個性質：
+  // 兩組數字，一眼就知道是編的。這裡是「報名人數的純函數」，得到三個性質：
   //   1. 同一個報名人數 → 永遠同一個比例（重新整理不會變）
   //   2. 報名人數沒動 → 比例不動（沒人報名數字卻自己在跳，才是真正的破綻）
-  //   3. 報名人數動了 → 比例才小幅漂移，幅度由 driftPerSignups 控制
-  // 用 value noise（整數格點雜湊 + smoothstep 內插）而不是直接雜湊每個 n：
-  // 直接雜湊的話多一個人報名就可能讓比例跳好幾個百分點，數字對不上人數變化。
+  //   3. 報名人數動了 → 比例才變，每 changeEverySignups 人換一次
+  //
+  // 做法是有界隨機遊走：每 K 人一格，每格從「前一個值的 ±1／±2」裡挑一個，
+  // 候選一定排除前一個值，所以停留長度剛好等於 K，不會出現長時間不動。
+  //
+  // 先前用的是 value noise（格點雜湊 + smoothstep），問題出在整數四捨五入：
+  // 帶寬只有幾個整數，雜訊要移動 1/帶寬 的幅度才會換一個整數，在曲線轉折處
+  // 會卡住幾十個人不動（實測最長 77 人）。改成遊走之後停留長度直接可控。
   // =========================================================================
   function hash01(i) {
     var x = Math.sin(i * 12.9898 + 78.233) * 43758.5453;
@@ -632,18 +637,32 @@
     var hi = Math.max(cfg.femaleMin, cfg.femaleMax);
     if (hi <= lo) return Math.round(lo);
 
-    var step = cfg.driftPerSignups > 0 ? cfg.driftPerSignups : 25;
-    var t = Math.max(0, n) / step;
-    var i = Math.floor(t);
-    var f = t - i;
-    var s = f * f * (3 - 2 * f);                    // smoothstep：格點交界不會有生硬轉折
-    var v = hash01(i) + (hash01(i + 1) - hash01(i)) * s;
+    var K = cfg.changeEverySignups > 0 ? cfg.changeEverySignups : 5;
+    var bias = cfg.femaleBias > 0 ? cfg.femaleBias : 0;
+    // 人數再大也不會拖慢頁面；上限遠高於這波 Beta 的可能規模
+    var buckets = Math.min(Math.floor(Math.max(0, n) / K), 5000);
 
-    var pct = Math.round(lo + v * (hi - lo));
-    // 剛好 50/50 看起來最假，推開一格。依雜訊落在哪一側分流到 49 或 51 ——
-    // 若一律推同一邊，那個值的出現次數會比鄰居高出一大截，分佈自己會露餡。
-    if (pct === 50) pct = v < 0.5 ? 49 : 51;
-    return Math.max(lo, Math.min(hi, pct));
+    var v = Math.round((lo + hi) / 2);
+    if (v === 50) v = 51;                           // 50/50 看起來最假，整條路徑都跳過它
+
+    for (var b = 1; b <= buckets; b++) {
+      var cand = [];
+      for (var d = -2; d <= 2; d++) {
+        if (d === 0) continue;
+        var x = v + d;
+        if (x >= lo && x <= hi && x !== 50 && x !== v) cand.push(x);
+      }
+      if (!cand.length) { v = (v > 50 ? lo : hi); continue; }   // 理論上碰不到，防呆
+
+      var h = hash01(b * 7.13 + 3.1);
+      // bias > 0 時女性過半那側權重較高；0 = 兩側等機率
+      var total = 0, w = [];
+      for (var j = 0; j < cand.length; j++) { w[j] = cand[j] > 50 ? 1 + bias : 1; total += w[j]; }
+      var r = h * total, acc = 0, pick = cand[0];
+      for (var k = 0; k < cand.length; k++) { acc += w[k]; if (r <= acc) { pick = cand[k]; break; } }
+      v = pick;
+    }
+    return v;
   }
 
   function syncPolicyRatio(signupCount) {
