@@ -56,7 +56,7 @@
     }
   }
 
-  window.__JOIN_DEBUG__ = { config: CFG, lastGoodFetch: {}, lastError: {} };
+  window.__JOIN_DEBUG__ = { config: CFG, lastGoodFetch: {}, lastError: {}, roll: null };
 
   var reduceMotion = !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
 
@@ -285,7 +285,9 @@
     settled: false,
     reels: null,                                           // 滾動中的五條帶子，供 retargetRoll 換落點用
     pending: null,                                         // 滾動途中到達的真實值，收尾時補上
-    guard: null                                            // 滾動期間盯格高變化的計時器，見 resyncReels
+    guard: null,                                           // 滾動期間盯格高變化的計時器，見 resyncReels
+    ticks: 0,                                              // 守衛跑過幾次（除錯用）
+    fixes: 0                                               // 實際修正過幾次位移（除錯用）
   };
 
   function padCount(v) {
@@ -337,6 +339,7 @@
   // 所以滾動期間持續盯著格高，一有變化就用新的格高重算位移。transition 會自己
   // 平順地接到新目標，不會斷。
   function resyncReels(el) {
+    ROLL.ticks++;
     if (ROLL.settled || !ROLL.reels) return;
     var tiles = el.querySelectorAll(".odo__d");
     for (var i = 0; i < ROLL.reels.length; i++) {
@@ -346,6 +349,7 @@
       if (!h || Math.abs(h - r.cell) < 0.5) continue;
       r.cell = h;
       r.el.style.transform = "translateY(" + (-r.n * h) + "px)";
+      ROLL.fixes++;
     }
   }
 
@@ -372,6 +376,7 @@
 
   function rollIn(el, value) {
     if (ROLL.started) return;
+    window.__JOIN_DEBUG__.roll = ROLL;
     ROLL.started = true;
 
     var v = normalizeCount(value);
