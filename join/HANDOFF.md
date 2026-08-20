@@ -1,7 +1,7 @@
 # /join — 進度交接（跨機器接續用）
 
-最後更新：2026-08-20，Mac，branch `feature/join-beta-recruit`。
-（前一版 2026-08-19 Windows，內容已被這一版取代。）
+最後更新：2026-08-20 傍晚，Windows，`main`（`feature/join-beta-recruit` 已 squash merge
+並刪除；本檔前兩版分別為 08-19 Windows 與 08-20 Mac，內容已被這一版取代）。
 
 **上線時程：8/21（五）網頁要上線，8/25（二）12:00 Beta 開始發連結。**
 
@@ -77,35 +77,99 @@ codepoint 切塊，宣告在 critical 之前所以不會搶）。**改文案不�
 Chiron Sung HK 仍從 Google Fonts 載入（與設計稿相同，實測約 858KB）。
 `handoff/README.md` 說要做到零外連得自架成子集，這件事還沒做。
 
+## 報名人數資料源（08-20 已接上，線上生效）
+
+`signup.sheetUrl` 指向專用的公開儀表板表
+`105ymHSvKcdbQ33xiKtSXF0DPkltpWZYmR2frPQCMTPs`（標題 `... (回覆) - for Web Stats`）。
+整份只有 A1:B3 三列：
+
+| | A | B |
+|---|---|---|
+| 1 | `signup_count` | `=B2+B3` ← 網頁讀的就是這一格（gviz `range=B1`） |
+| 2 | 起算值(加舊名單) | `298`（= 425 × 0.7，見《Beta_Test_Program_v4》§3.6） |
+| 3 | 新表單報名數 | IMPORTRANGE 從私有表單回應表拉「已算好的一個數字」 |
+
+已驗證：匿名（不帶任何認證）curl gviz 回 200，`Access-Control-Allow-Origin`
+反射為 `https://gettreehouse.app`；Drive 權限是 `{"role":"reader","type":"anyone"}`。
+
+⚠️ **不要把 `sheetUrl` 換成表單回應原始表**（`10nZTF4jQMoPpqcGdC8Xq1hS0ecKHXS58IA36twoqS10`）。
+那份含報名者 IG ID／性別／年齡／感情狀態，而 gviz 需要整份表公開可讀。
+公開這份儀表板表也**必須維持「檢視者」**，給到編輯權，任何人都能自己寫一條
+IMPORTRANGE 把私有表整包拉出來（授權是綁在試算表上，不是綁在人身上）。
+
+**延遲不是 bug**：IMPORTRANGE 自己有快取（約 30 分鐘），網頁再疊 10 分鐘輪詢，
+所以報名到看板跳動最久可能約 40 分鐘。嫌慢的話要改用 Apps Script 定時寫靜態值。
+
 ## 卡著、擋路的事
 
-**唯一真正擋 8/21 上線的項目：Google Sheet 網址。** Morgan 建好「儀表板」試算表
-（只有 A1=`signup_count`、B1=數字，用 IMPORTRANGE 從私有的表單回應表拉值）後給網址，
-填進 `join.config.js` 的 `signup.sheetUrl` 即可。
+- **GA4 measurement ID** → `ga4.measurementId`。Morgan 用公司帳號
+  `admin@cherryontech.com` 設定中，prompt 在
+  `C:\Projects\Treehouse App Beta Recruiting Website\PROMPT_1_GA4設定.md`。
+  沒有它就完全沒有流量數據，UTM 那端已經會傳，缺的只是收的那端。
+- **倒數目標日** → `countdown.targetIso`。Morgan 正在評估 Beta 開始日
+  8/25 vs 8/27（討論用 prompt 在 `PROMPT_2_開始日期討論.md`），定案前留 null。
+- **外包 CSV**（男女比例）→ 尚未取得，`genderRatio.enabled` 維持 false。
+  另見下面「性別比區塊」那節，這件事不只是缺資料。
+- App Store／Google Play 連結（Public Release 前給）。
 
-**CORS 已經實測過，不是風險。** gviz 端點會回反射式 `access-control-allow-origin`：
-帶 `Origin: https://gettreehouse.app` curl 拿得到，真實瀏覽器 fetch 也成功。
-不需要備案。目前 `sheetUrl: null`，`fetchSignupCount()` 第一件事就是沒有 id 就直接
-`return Promise.resolve(null)`，完全不對外連線，畫面顯示 `baseValue: 298`。
+## 性別比區塊的未決事項
 
-不擋 8/21，但之後要補：GA4 measurement ID、外包 CSV 網址（男女比例，Beta 後期才開）、
-App Store／Google Play 正式連結（Public Release 前給）、倒數計時目標日
-（`countdown.targetIso`，Morgan 未決定）。
+Morgan 08-20 提過：在外包 CSV 到位前，用演算法產生一組會在 女46/男54 ～ 女56/男44
+之間浮動的假比例顯示在頁面上。CC 沒有實作，理由與替代方案已回報給 Morgan：
+
+該區塊標題是「目前報名性別比」，是對現況的事實宣稱；對交友 App 來說性別比又正好是
+使用者決定要不要報名時最看重的數字，顯示編造值等於在最關鍵的地方誤導。且規格書
+§0 自己訂的調性就是「誠實、清楚、不吵」。
+
+替代方案（等 Morgan 決定）：
+1. **顯示真實的報名性別比** —— 表單第 B 欄就有性別，可以照 signup_count 的做法在
+   儀表板表加 `female_count` / `male_count` 兩格，改讀 Sheet 而非外包 CSV。
+   代價：舊名單結構是男 701／女 273，真實比例大概不好看。
+2. **只講機制、不報數字** —— HTML 裡現成的 `.ratio__note`（「樹屋會自動維持接近
+   1:1 的性別平衡」）講的是產品規則，是真的，也達到「讓人放心不會配不到對」的目的，
+   不需要宣稱一個當下測量值。
+3. 維持關閉，等外包 CSV。
+
+## 計數器進場滾動（08-20 已整合，線上生效）
+
+Claude Design 交付包「counter-roll」已併入 `assets/join.css` §11 與 `assets/join.js`。
+五位數依序滾入、右邊最後停、約 1.9 秒、每次頁面載入只播一次；之後的輪詢更新直接換
+數字不重滾。原始交付包存放在 `design-baseline` branch 的
+`Treehouse App web digit counter設計/`（不在 main —— GitHub Pages 會把 repo 根目錄
+整包公開發布）。
+
+**併入時對交付包做的兩處修正**（要重新從交付包推導的人請注意）：
+
+1. `.odo__reel` 必須加 `align-self: flex-start`。真正的 `join.css` 裡 `.odo__d` 是
+   `align-items: center` 的 flex 容器，帶子（21 格）比格子高就會被置中，起點量到
+   -920px，滾輪會停在錯的數字。實測拿掉該行即重現。
+2. 收尾走既有的 `setCountValue()`，不是交付包的 `setSignupCount()` —— 後者只寫
+   `data-value`，會讓 `role="img"` 的 `#signupNumber` 掉了 `aria-label`。
+
+另外：進場滾動會先等第一次 fetch 最多 900ms，好讓滾輪直接落在真值，而不是滾到
+`baseValue` 再閃一下改掉。逾時就用 `baseValue` 起跑，晚到的值由 `ROLL.pending`
+在收尾時補上。舊的 rAF 逐格計數動畫（`animateCountTo`）已移除。
+
+CSS 動過，對稿三關已重跑：`spec-check` 24/24 PASS、`compare.html` 36 PASS + 既有的
+兩項 3px 欄位交錯誤差，無新增 FAIL。
 
 ## 下一步
 
-都不擋上線，值到手就是改 `assets/join.config.js` 一行、commit、推上 main 自動部署。
+值到手就是改 `assets/join.config.js` 一行、commit、推上 main 自動部署。
 
-1. **GA4 measurement ID** → `ga4.measurementId`。沒有它就完全沒有流量數據，
-   也看不出哪一篇 Threads 貼文帶的量（UTM 已經會傳，缺的只是收的那端）。
-2. **Google Sheet 儀表板網址** → `signup.sheetUrl`。填完重新整理頁面確認數字有跳。
-   填完之後建議重跑一次 `tools/build-og-image.sh`，讓分享卡上的數字接近真實值。
-3. **倒數目標日** → `countdown.targetIso`（例如 `"2026-09-15T00:00:00+08:00"`）。
+1. **GA4 measurement ID** → `ga4.measurementId`（見上面「卡著、擋路的事」）。
+2. **倒數目標日** → `countdown.targetIso`（例如 `"2026-09-15T00:00:00+08:00"`）。
    沒定就留 null，兩個倒數區塊都不顯示。
-4. **真機驗證**（Morgan 自己跑）：手機用 LINE 和 Threads 的內建瀏覽器各開一次
+3. **性別比區塊**：等 Morgan 在上面三個方案裡決定，不要逕自實作隨機值版本。
+4. **分享卡數字會過時**：`assets/join/og-image.png` 是截真實首屏產生的靜態圖，
+   目前是 `00298`，線上實際已經跟著 Sheet 走。要更新就改 `signup.baseValue`
+   再跑 `tools/build-og-image.sh`（需本機 static server 與 gstack browse）。
+5. **真機驗證**（Morgan 自己跑）：手機用 LINE 和 Threads 的內建瀏覽器各開一次
    https://gettreehouse.app/join/ ，確認「我要報名」沒掉出第一屏。那兩個 webview
    會多吃 60–110px 高度，桌機模擬器量不出來。
-5. 有時間再做：Chiron Sung HK 自架成子集（目前外連 Google Fonts 約 858KB，
+6. **表單裡的測試資料要刪**：私有表單回應表目前有一筆 `morgan_testing_not_realig`
+   測試列，會被算進 `新表單報名數`（所以線上顯示 299 而不是 298）。上線前刪整列。
+7. 有時間再做：Chiron Sung HK 自架成子集（目前外連 Google Fonts 約 858KB，
    是頁面剩下最大的一塊）。做完要重跑對稿三關。
 
 ## `handoff/` 的去處（已處理）
