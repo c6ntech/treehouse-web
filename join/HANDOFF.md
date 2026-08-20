@@ -13,7 +13,9 @@ Claude Design 的視覺已經整支併進 repo，對稿三關全部通過。剩�
 - `assets/join.css` 已被交付版整支覆蓋，`join/index.html` 依交付結構重寫。
 - `assets/join.js` 沿用 repo 原本那支（資料層沒動），只補了視覺需要的三段邏輯。
 - 字型已子集化、`forest.svg` 已壓縮，`/join` 傳輸量從約 15MB 降到 283KB。
-- 已推上 `origin/feature/join-beta-recruit`。**還沒開 PR，還沒跑 `/review`。**
+- `/review` 已跑過，四項修正見 commit `6e1c376`。
+- 分享卡 `assets/join/og-image.png` 已用真實首屏重新產生（舊的還是改版前的米色版）。
+- 已 merge 進 `main`，GitHub Pages 已部署，線上網址 https://gettreehouse.app/join/。
 
 ## 對稿門檻（改任何 CSS 之後都要重跑）
 
@@ -90,11 +92,21 @@ Chiron Sung HK 仍從 Google Fonts 載入（與設計稿相同，實測約 858KB
 App Store／Google Play 正式連結（Public Release 前給）、倒數計時目標日
 （`countdown.targetIso`，Morgan 未決定）。
 
-## 下一步（照順序）
+## 下一步
 
-1. Sheet 網址到手 → 填 `signup.sheetUrl` → 重跑一次頁面確認數字有跳
-2. `/review` 過一次
-3. 真機 LINE／Threads 內建瀏覽器實測首屏可視高度（Morgan 自己跑）
+都不擋上線，值到手就是改 `assets/join.config.js` 一行、commit、推上 main 自動部署。
+
+1. **GA4 measurement ID** → `ga4.measurementId`。沒有它就完全沒有流量數據，
+   也看不出哪一篇 Threads 貼文帶的量（UTM 已經會傳，缺的只是收的那端）。
+2. **Google Sheet 儀表板網址** → `signup.sheetUrl`。填完重新整理頁面確認數字有跳。
+   填完之後建議重跑一次 `tools/build-og-image.sh`，讓分享卡上的數字接近真實值。
+3. **倒數目標日** → `countdown.targetIso`（例如 `"2026-09-15T00:00:00+08:00"`）。
+   沒定就留 null，兩個倒數區塊都不顯示。
+4. **真機驗證**（Morgan 自己跑）：手機用 LINE 和 Threads 的內建瀏覽器各開一次
+   https://gettreehouse.app/join/ ，確認「我要報名」沒掉出第一屏。那兩個 webview
+   會多吃 60–110px 高度，桌機模擬器量不出來。
+5. 有時間再做：Chiron Sung HK 自架成子集（目前外連 Google Fonts 約 858KB，
+   是頁面剩下最大的一塊）。做完要重跑對稿三關。
 
 ## `handoff/` 的去處（已處理）
 
