@@ -254,3 +254,12 @@ repo 在 c6ntech org，但這台 Mac 的 git 預設認證是 hytmots，直接 pu
 這些文件裡真正影響工程實作的內容，已經吸收進 `join.config.js` 的註解、
 `handoff/HANDOFF_NOTES.md`、跟這份文件本身。若含個資那兩份 xlsx 需要在 Mac 上用，
 得自己用 GitHub 以外的方式搬（AirDrop／隨身碟／私人雲端），不建議推上 GitHub。
+
+## UTM 命名規則
+
+見 `join/UTM_RULES.md`（規則、`utm_content` 取名格式、什麼時候換 campaign、範例）。
+產生器在 `join/utm-tool/`，線上 <https://gettreehouse.app/join/utm-tool/>。
+規則若有變動，`UTM_RULES.md` 與 `utm-tool/index.html` 的說明要一起改。
+
+重點：`utm_content` 每篇貼文都要不同且全小寫。程式把網址參數名稱**原樣**帶進 GA4，
+不做大小寫正規化，`utm_Source` 會對不上後台註冊的 `utm_source`。

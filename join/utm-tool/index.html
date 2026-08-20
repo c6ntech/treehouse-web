@@ -11,6 +11,8 @@
     .tool { max-width: 30rem; margin: 0 auto; padding: 2.4rem var(--gutter) 3rem; }
     .tool h1 { font-size: 1.4rem; color: var(--color-brand); margin: 0 0 .3rem; }
     .tool p.hint { color: var(--color-text-soft); font-size: .92rem; margin: 0 0 1.6rem; }
+    .hint--field { font-size: .84rem; line-height: 1.6; margin: .45rem 0 0 !important; }
+    .hint--field code { background: var(--color-brand-weak); padding: .05em .35em; border-radius: 5px; font-size: .95em; }
     .field { margin: 0 0 1.1rem; }
     .field label { display: block; font-size: .9rem; font-weight: 600; color: var(--color-text); margin: 0 0 .35rem; }
     .field select, .field input {
@@ -52,8 +54,16 @@
     </div>
 
     <div class="field">
-      <label for="content">這篇貼文的代稱（自己取，方便日後辨認即可）</label>
-      <input id="content" type="text" placeholder="例如 d1_intro、veritasium_a、csb_update">
+      <label for="content">這篇貼文的代稱</label>
+      <input id="content" type="text" placeholder="d1_intro">
+      <p class="hint hint--field">
+        格式 <code>d&lt;第幾天&gt;_&lt;主題&gt;</code>，招募開始那天算 d1。
+        主題常用：<code>intro</code>、<code>howitworks</code>、<code>gender</code>、
+        <code>founder</code>、<code>story</code>、<code>update</code>、<code>lastcall</code>。
+        同一天同主題發第二篇就加 <code>_b</code>。<br>
+        <strong>每篇都要不一樣</strong>，重複的話數據會被合併、分不出哪篇有效。
+        規則詳見 <code>join/UTM_RULES.md</code>。
+      </p>
     </div>
 
     <div class="result">
