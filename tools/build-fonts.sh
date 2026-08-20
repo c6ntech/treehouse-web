@@ -16,22 +16,36 @@
 #              對應的那一塊，不會整包 2MB 拉下來，也不會出現豆腐字。
 #
 # 所以改文案「不需要」重跑這支；重跑只是把新文案收進 critical、少一次
-# 額外請求。真的重跑之後請跑一次 handoff/ 的三支驗收工具確認對稿沒跑掉。
+# 額外請求。真的重跑之後請跑一次對稿三關（見 join/HANDOFF.md）確認沒跑偏。
 #
 # 用法：  bash tools/build-fonts.sh
 # 依賴：  uv（pyftsubset 由 uvx 臨時取得，不會裝進系統）
-# 來源：  handoff/assets/fonts/*.ttf —— 保留原始 TTF 當作重建來源，不要刪
+# 來源：  原始 TTF 在 design-baseline branch 的 handoff/assets/fonts/。
+#         那包 63MB，不進 main（GitHub Pages 會把 repo 根目錄整包公開發布），
+#         所以這支會自己從該 branch 取檔到暫存目錄，不需要你先 checkout。
 # =============================================================================
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
-SRC="handoff/assets/fonts"
 OUT="assets/fonts"
+BASELINE_REF="${BASELINE_REF:-origin/design-baseline}"
+TTFS=(Caprasimo-Regular.ttf NotoSansTC-Regular.ttf NotoSansTC-Bold.ttf)
+
+if [ -d "handoff/assets/fonts" ]; then
+  SRC="handoff/assets/fonts"          # 在 design-baseline 上直接跑
+else
+  SRC=$(mktemp -d)
+  trap 'rm -rf "$SRC"' EXIT
+  git rev-parse --verify "$BASELINE_REF" >/dev/null 2>&1 \
+    || { echo "找不到 $BASELINE_REF —— 先 git fetch origin design-baseline" >&2; exit 1; }
+  for F in "${TTFS[@]}"; do
+    git show "$BASELINE_REF:handoff/assets/fonts/$F" > "$SRC/$F"
+  done
+  echo "原始 TTF 取自 $BASELINE_REF"
+fi
 UVX=$(command -v uvx || echo "$HOME/.local/bin/uvx")
 [ -x "$UVX" ] || { echo "找不到 uvx（https://docs.astral.sh/uv/）" >&2; exit 1; }
 PYFT=("$UVX" --quiet --with brotli --from fonttools pyftsubset)
-
-[ -d "$SRC" ] || { echo "找不到原始 TTF：$SRC" >&2; exit 1; }
 mkdir -p "$OUT"
 
 # --- 1. 收集本頁實際用到的字 ------------------------------------------------

@@ -17,15 +17,23 @@ Claude Design 的視覺已經整支併進 repo，對稿三關全部通過。剩�
 
 ## 對稿門檻（改任何 CSS 之後都要重跑）
 
+驗收工具與設計稿本體在 **`design-baseline` branch** 的 `handoff/`，不在 `main`——
+那包 63MB，而 GitHub Pages 會把 repo 根目錄整包公開發布，放進 main 等於把設計稿
+掛在 `gettreehouse.app/handoff/`。要跑對稿就臨時取出來，跑完丟掉：
+
 ```
 cd treehouse-web
+git fetch origin design-baseline
+git checkout origin/design-baseline -- handoff    # 取出，不會切 branch
 python -m http.server 8787
 # http://127.0.0.1:8787/handoff/compare.html
 # http://127.0.0.1:8787/handoff/spec-check.html
 # http://127.0.0.1:8787/handoff/fold-test.html
+
+git rm -r --cached handoff && rm -rf handoff       # 跑完清掉，別 commit 進去
 ```
 
-目前基準（三支工具的 iframe 都已改指 `/join/index.html?flags=on`，量的是 repo
+目前基準（三支工具的 iframe 都指向 `/join/index.html?flags=on`，量的是 repo
 本體，不是 `handoff/` 裡的交付副本）：
 
 | 工具 | 通過標準 | 目前 |
@@ -56,7 +64,8 @@ python -m http.server 8787
 ## 字型
 
 `assets/fonts/*.woff2` 是產生物，由 `tools/build-fonts.sh` 產生，**不要手改**。
-原始 TTF 保留在 `handoff/assets/fonts/` 當重建來源，不要刪。
+原始 TTF 在 `design-baseline` branch 的 `handoff/assets/fonts/`；腳本會自己
+從那個 branch 取檔到暫存目錄，不用先 checkout。
 
 兩層 unicode-range：`critical`（本頁現有的字，一定下載）+ `rest-0..7`（其餘依
 codepoint 切塊，宣告在 critical 之前所以不會搶）。**改文案不需要重跑這支腳本** ——
@@ -86,13 +95,12 @@ App Store／Google Play 正式連結（Public Release 前給）、倒數計時�
 1. Sheet 網址到手 → 填 `signup.sheetUrl` → 重跑一次頁面確認數字有跳
 2. `/review` 過一次
 3. 真機 LINE／Threads 內建瀏覽器實測首屏可視高度（Morgan 自己跑）
-4. `/ship`：開 PR → merge → GitHub Pages 自動部署 → `/canary`
 
-## ⚠ 開 PR 前一定要處理：`handoff/` 不能進 `main`
+## `handoff/` 的去處（已處理）
 
-`handoff/` 佔 63MB，而 GitHub Pages 會把 repo 根目錄整包發布 —— merge 進 `main`
-之後設計稿與驗收工具會公開掛在 `gettreehouse.app/handoff/`。留在 feature branch 上
-兩台機器都拿得到，又不會上線。開 PR 時要把它排除。
+推成 `design-baseline` branch 永久保留在 repo 裡當視覺基準，`main` 與出貨 branch
+上都已移除。原因見上面「對稿門檻」那節。之後要改視覺、要重跑對稿，都從那個 branch
+臨時取出來用。
 
 ## GitHub 帳號
 

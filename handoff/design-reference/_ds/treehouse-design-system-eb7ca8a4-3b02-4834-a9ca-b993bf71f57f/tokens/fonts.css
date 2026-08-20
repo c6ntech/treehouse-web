@@ -1,9 +1,0 @@
-/* Treehouse webfonts. Caprasimo = wordmark/display. Noto Sans TC =全部 UI 文字 (Latin + Traditional Chinese). */
-@font-face{font-family:"Caprasimo";src:url("../assets/fonts/Caprasimo-Regular.ttf") format("truetype");font-weight:400;font-style:normal;font-display:swap}
-@font-face{font-family:"Noto Sans TC";src:url("../assets/fonts/NotoSansTC-Light.ttf") format("truetype");font-weight:300;font-style:normal;font-display:swap}
-@font-face{font-family:"Noto Sans TC";src:url("../assets/fonts/NotoSansTC-Regular.ttf") format("truetype");font-weight:400;font-style:normal;font-display:swap}
-@font-face{font-family:"Noto Sans TC";src:url("../assets/fonts/NotoSansTC-Medium.ttf") format("truetype");font-weight:500;font-style:normal;font-display:swap}
-@font-face{font-family:"Noto Sans TC";src:url("../assets/fonts/NotoSansTC-Bold.ttf") format("truetype");font-weight:700;font-style:normal;font-display:swap}
-@font-face{font-family:"Noto Sans TC";src:url("../assets/fonts/NotoSansTC-Black.ttf") format("truetype");font-weight:900;font-style:normal;font-display:swap}
-/* Noto Sans CJK TC appears 14× in the source; it is the same typeface family as Noto Sans TC and maps to it here. */
-@font-face{font-family:"Noto Sans CJK TC";src:url("../assets/fonts/NotoSansTC-Regular.ttf") format("truetype");font-weight:400;font-style:normal;font-display:swap}
