@@ -305,13 +305,26 @@
       }
     }
 
+    // 只動輪播容器自己的水平捲軸。不要用 scrollIntoView——即使給 block:"nearest"，
+    // 當投影片比視窗高（手機上就是這樣）瀏覽器仍會連帶垂直捲動整個頁面，
+    // 載入當下就把品牌／slogan 推出首屏，違反「首屏四元素免捲動」的硬限制。
+    function centerSlide(i, smooth) {
+      var target = slides[i];
+      if (!target) return;
+      var tRect = track.getBoundingClientRect();
+      var sRect = target.getBoundingClientRect();
+      var left = track.scrollLeft + (sRect.left - tRect.left) - (tRect.width - sRect.width) / 2;
+      if (track.scrollTo) {
+        track.scrollTo({ left: left, behavior: smooth && !reduceMotion ? "smooth" : "auto" });
+      } else {
+        track.scrollLeft = left;
+      }
+    }
+
     function goTo(i, userInitiated) {
       i = Math.max(0, Math.min(slides.length - 1, i));
       if (userInitiated) markInteracted();
-      var target = slides[i];
-      if (target && target.scrollIntoView) {
-        target.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", inline: "center", block: "nearest" });
-      }
+      centerSlide(i, true);
       setActive(i);
     }
 
@@ -353,10 +366,8 @@
 
     // 初始定位交給 JS 明確對齊（不依賴瀏覽器在 scrollLeft:0 時是否已套用
     // scroll-snap-align:center——實測不同瀏覽器在載入當下對這點行為不一致，
-    // 明確 scrollIntoView 一次才能保證兩側露邊在首次載入就對稱、可靠）。
-    if (slides[0] && slides[0].scrollIntoView) {
-      slides[0].scrollIntoView({ behavior: "auto", inline: "center", block: "nearest" });
-    }
+    // 明確對齊一次才能保證兩側露邊在首次載入就對稱、可靠）。
+    centerSlide(0, false);
     setActive(0);
   }
 
