@@ -39,9 +39,10 @@ window.JOIN_CONFIG = {
     mode: "policy",
 
     // policy 模式的浮動帶寬（女性百分比，男性自動 = 100 - 女性）。
-    // 建議把帶寬蓋住實際政策值 55，不要讓顯示值長期偏離你真正在執行的比例。
-    femaleMin: 52,
-    femaleMax: 57,
+    // 46–56：跨過 50 兩側，女性有時多、有時少，維持真實感（真的不可能一直女多）。
+    // 剛好落在 50 的時候會被推到 49 或 51（依雜訊方向左右分流），不會出現 50/50。
+    femaleMin: 46,
+    femaleMax: 56,
 
     // 每多少人報名，比例大致漂移一個完整週期。數字越大 → 比例動得越慢越穩。
     // 太小會變成「多一個人報名比例就跳好幾趴」，反而不自然。
@@ -77,7 +78,11 @@ window.JOIN_CONFIG = {
   },
 
   // ---- GA4 ----
+  // 資源建立於公司帳號 admin@cherryontech.com。事件資料保留期限已設 14 個月。
+  // 後台已註冊的自訂維度（事件範圍），參數名稱必須跟程式送出的 key 完全一致：
+  //   cta_mode / utm_source / utm_medium / utm_campaign / utm_content / source
+  // 留 null 就完全不載入 gtag.js，不會有任何對外連線。
   ga4: {
-    measurementId: null              // 例如 "G-XXXXXXXXXX"。留 null 就完全不載入 GA4，不會有任何對外連線
+    measurementId: "G-J6XWVKCZXS"
   }
 };

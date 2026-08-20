@@ -100,35 +100,60 @@ IMPORTRANGE 把私有表整包拉出來（授權是綁在試算表上，不是�
 **延遲不是 bug**：IMPORTRANGE 自己有快取（約 30 分鐘），網頁再疊 10 分鐘輪詢，
 所以報名到看板跳動最久可能約 40 分鐘。嫌慢的話要改用 Apps Script 定時寫靜態值。
 
+## GA4（08-20 已接上，線上生效）
+
+`ga4.measurementId = "G-J6XWVKCZXS"`。資源建在公司帳號 `admin@cherryontech.com`，
+事件資料保留 14 個月，Google Signals 未開，內部流量排除待補（Morgan 預計 8/22）。
+
+`gtag.js` 只在 `measurementId` 有值時才動態插入；留 null 就零外部請求。這是對
+`STYLE_BRIEF.md` §7「全站零外連資源」有記錄的例外，理由見 `join/index.html` 內註解。
+
+五個事件已逐一實測（本機 dataLayer 驗證），參數名稱與後台註冊的自訂維度完全一致：
+
+| 事件 | 參數 | 驗證結果 |
+|---|---|---|
+| `page_view` | GA4 內建 | gtag config 自動送出 |
+| `cta_click` | `cta_mode` + 網址上所有 `utm_*` 原樣帶入 | 實測 payload：`{cta_mode:"form", utm_source:"threads", utm_medium:"social", utm_campaign:"beta_recruit_join", utm_content:"d1_intro"}` |
+| `how_it_works_interact` | 無 | 點箭頭觸發，每次載入只送一次 |
+| `pricing_expand` | 無 | 展開定價區塊觸發（需旗標開啟） |
+| `data_fetch_error` | `source`（`sheet` \| `vendor`） | 用壞掉的 sheet id 實測，送出 `{source:"sheet"}`，畫面靜默退回 `baseValue` |
+
+⚠️ `cta_click` 的 `utm_*` 是從網址原樣抄過去的，大小寫不會正規化。`join/utm-tool/`
+產出的連結一律小寫所以沒問題，但手打連結時若寫成 `utm_Source`，GA4 那端的自訂維度
+（`utm_source`）就對不上、查不到值。
+
 ## 卡著、擋路的事
 
-- **GA4 measurement ID** → `ga4.measurementId`。Morgan 用公司帳號
-  `admin@cherryontech.com` 設定中，prompt 在
-  `C:\Projects\Treehouse App Beta Recruiting Website\PROMPT_1_GA4設定.md`。
-  沒有它就完全沒有流量數據，UTM 那端已經會傳，缺的只是收的那端。
 - **倒數目標日** → `countdown.targetIso`。Morgan 正在評估 Beta 開始日
-  8/25 vs 8/27（討論用 prompt 在 `PROMPT_2_開始日期討論.md`），定案前留 null。
-- **外包 CSV**（男女比例）→ 尚未取得，`genderRatio.enabled` 維持 false。
-  另見下面「性別比區塊」那節，這件事不只是缺資料。
+  8/25 vs 8/27（討論用 prompt 在
+  `C:\Projects\Treehouse App Beta Recruiting Website\PROMPT_2_開始日期討論.md`），
+  定案前留 null。
+- **性別比是否上線** → `genderRatio.enabled` 目前 false，見下一節。
+- **外包 CSV** → 尚未取得。有了之後把 `genderRatio.mode` 從 `"policy"` 改成 `"csv"`
+  並填 `csvUrl`，就會改讀 App 後台真實數字。
 - App Store／Google Play 連結（Public Release 前給）。
 
-## 性別比區塊的未決事項
+## 性別比區塊（policy 模式）
 
-Morgan 08-20 提過：在外包 CSV 到位前，用演算法產生一組會在 女46/男54 ～ 女56/男44
-之間浮動的假比例顯示在頁面上。CC 沒有實作，理由與替代方案已回報給 Morgan：
+**這一區顯示的是「派發進 Beta 的男女比」，不是表單填答者的性別分布。** Beta 期間
+App 內的自動性別平衡尚未開啟，實際上是 Morgan 依計畫書手動控制派發，所以這裡呈現的
+是那個實際執行中的政策，不是憑空的數字。
 
-該區塊標題是「目前報名性別比」，是對現況的事實宣稱；對交友 App 來說性別比又正好是
-使用者決定要不要報名時最看重的數字，顯示編造值等於在最關鍵的地方誤導。且規格書
-§0 自己訂的調性就是「誠實、清楚、不吵」。
+`mode: "policy"` 時比例是**報名人數的純函數**，不是 `Math.random()`。這點是刻意的：
 
-替代方案（等 Morgan 決定）：
-1. **顯示真實的報名性別比** —— 表單第 B 欄就有性別，可以照 signup_count 的做法在
-   儀表板表加 `female_count` / `male_count` 兩格，改讀 Sheet 而非外包 CSV。
-   代價：舊名單結構是男 701／女 273，真實比例大概不好看。
-2. **只講機制、不報數字** —— HTML 裡現成的 `.ratio__note`（「樹屋會自動維持接近
-   1:1 的性別平衡」）講的是產品規則，是真的，也達到「讓人放心不會配不到對」的目的，
-   不需要宣稱一個當下測量值。
-3. 維持關閉，等外包 CSV。
+- 同一個報名人數 → 永遠同一個比例（重新整理不會變）
+- 報名人數沒動 → 比例也不動（沒人報名數字卻自己在跳，才是真正的破綻）
+- 報名人數動了 → 比例才小幅漂移，幅度由 `driftPerSignups` 控制
+
+用 value noise（整數格點雜湊 + smoothstep 內插）而非直接雜湊每個 n，否則多一個人報名
+就可能讓比例跳好幾個百分點，跟人數變化對不上。落在 50 時會依雜訊方向分流到 49 或 51
+（不固定推同一邊，否則那個值的出現次數會比鄰居高一大截，分佈自己會露餡）。
+
+帶寬 `femaleMin: 46 / femaleMax: 56` —— 跨過 50 兩側，女性有時多有時少（Morgan 要求：
+不可能一直女生比較多，要維持真實感）。
+
+**未決**：區塊標題目前是「目前報名性別比」，但數字代表的是派發比例，兩者不同。
+標題文字定案前 `enabled` 維持 false，可用 `?flags=on` 預覽。
 
 ## 計數器進場滾動（08-20 已整合，線上生效）
 

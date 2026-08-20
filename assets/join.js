@@ -592,8 +592,9 @@
     var v = hash01(i) + (hash01(i + 1) - hash01(i)) * s;
 
     var pct = Math.round(lo + v * (hi - lo));
-    // 剛好 50/50 看起來最假，推開一格（往帶寬中心那一側）
-    if (pct === 50) pct = (lo + hi) / 2 >= 50 ? 51 : 49;
+    // 剛好 50/50 看起來最假，推開一格。依雜訊落在哪一側分流到 49 或 51 ——
+    // 若一律推同一邊，那個值的出現次數會比鄰居高出一大截，分佈自己會露餡。
+    if (pct === 50) pct = v < 0.5 ? 49 : 51;
     return Math.max(lo, Math.min(hi, pct));
   }
 
