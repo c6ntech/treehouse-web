@@ -56,9 +56,10 @@
     }
   }
 
-  window.__JOIN_DEBUG__ = { config: CFG, lastGoodFetch: {}, lastError: {}, roll: null };
+  window.__JOIN_DEBUG__ = { config: CFG, lastGoodFetch: {}, lastError: {}, roll: null, reduceMotion: null };
 
   var reduceMotion = !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+  window.__JOIN_DEBUG__.reduceMotion = reduceMotion;   // 使用者系統有沒有關動畫（除錯用）
 
   // =========================================================================
   // Analytics — gtag.js 是刻意的外連例外（見 join/index.html 內註解），只在
@@ -258,6 +259,12 @@
   // 逐格念成「零 零 二 九 八」。也刻意不要放 aria-live —— 計數動畫每幀都會
   // 改內容，live region 會把整段動畫播報成一長串數字。人數十分鐘才更新一次，
   // 不需要即時播報。
+  // 解除 head 內嵌腳本加上的隱藏（見 join/index.html）。一有可顯示的數字就呼叫。
+  function revealCounter() {
+    var d = document.documentElement;
+    d.className = d.className.replace(/\s*counter-pending\b/, "");
+  }
+
   function setCountValue(el, value) {
     var v = normalizeCount(value);
     paintOdometer(el, v);
@@ -324,6 +331,7 @@
     ROLL.reels = null;
     if (ROLL.guard) { clearInterval(ROLL.guard); ROLL.guard = null; }
     setCountValue(el, value);
+    revealCounter();
   }
 
   // 位移是寫死的 px（見 join.css §11 註解：改用 CSS 變數的話 transition 不會內插），
@@ -396,6 +404,7 @@
       reels.push({ el: strip, n: n, cell: tiles[i].getBoundingClientRect().height });
     }
     ROLL.reels = reels;
+    revealCounter();   // 帶子已就位，起點是 0 不是預設值，可以顯示了
 
     // 起點與終點必須分兩個 tick 設定，否則瀏覽器會合併成「沒有動畫」。
     // 這裡用 setTimeout 而非 requestAnimationFrame：部分 webview（LINE / IG 內建
@@ -661,12 +670,20 @@
     // 重新整理時會先看到 298 再跳成真值，那個閃動很明顯。
     // 滾輪起跑時落點先用 baseValue，等 fetch 回來（實測約 300ms，遠早於第一條
     // 帶子停止的 900ms）由 retargetRoll 把落點換成真值，中途換末端看不出來。
+    // reduceMotion 時不播動畫（尊重系統偏好），但也不能先把 baseValue 畫上去 ——
+    // 那會變成「先顯示 298、fetch 回來再跳 300」，跟播動畫那條路徑要避免的閃動一樣。
+    // 改成先等第一次 fetch 最多 900ms，拿到真值才畫第一次；逾時才退回 baseValue。
+    // 這段期間數字是被 counter-pending 藏住的，看到的是空格子，不是錯的數字。
+    var fallbackTimer = null;
     if (numberEl) {
       if (reduceMotion) {
-        // 不播動畫：直接視為已收尾，之後的更新走 applyCount 直接換數字
         ROLL.started = true;
         ROLL.settled = true;
-        setCountValue(numberEl, CFG.signup.baseValue);
+        fallbackTimer = setTimeout(function () {
+          fallbackTimer = null;
+          setCountValue(numberEl, CFG.signup.baseValue);
+          revealCounter();
+        }, 900);
       } else {
         rollIn(numberEl, CFG.signup.baseValue);
       }
@@ -677,10 +694,22 @@
         .then(function (num) {
           if (num === null) return;   // 沒設 sheetUrl／mock 模式：不算失敗，維持 baseValue
           reportFetchSuccess("sheet", num);
-          if (numberEl) applyCount(numberEl, num);
+          if (numberEl) {
+            if (fallbackTimer) { clearTimeout(fallbackTimer); fallbackTimer = null; }
+            applyCount(numberEl, num);
+            revealCounter();
+          }
           syncPolicyRatio(num);
         })
-        .catch(function (err) { reportFetchFailure("sheet", err); });
+        .catch(function (err) {
+          reportFetchFailure("sheet", err);
+          // 抓不到就把預設值放出來，不要讓數字一直藏著
+          if (numberEl && fallbackTimer) {
+            clearTimeout(fallbackTimer); fallbackTimer = null;
+            setCountValue(numberEl, CFG.signup.baseValue);
+          }
+          revealCounter();
+        });
     }
     refreshSignup();
     startPolling(refreshSignup, CFG.signup.pollMs);

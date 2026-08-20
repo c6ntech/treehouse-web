@@ -34,6 +34,22 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chiron+Sung+HK:wght@400;600;700&display=swap">
   <link rel="stylesheet" href="/assets/join.css">
+
+  <script>
+    /* 計數器裡的五位數是 HTML 的靜態預設值，真值要等 join.js 抓 Sheet 回來才知道。
+       join.js 是 defer，冷啟動時它會早於首次繪製跑完（實測 120ms vs 240ms），但暖快取
+       時兩者會擠在一起，瀏覽器可能先畫一次預設值 —— 於是重新整理會閃一下 298 再跳真值。
+       這段在 body 解析前就執行，先把數字本身藏起來（格子的底色與尺寸不動，所以不會有
+       版面跳動），join.js 一拿到值就移除。
+       2.5 秒的保險：萬一 join.js 載入失敗，數字仍會顯示出來，不會永遠空白。 */
+    (function () {
+      var d = document.documentElement;
+      d.className += " counter-pending";
+      setTimeout(function () {
+        d.className = d.className.replace(/\s*counter-pending\b/, "");
+      }, 2500);
+    })();
+  </script>
 </head>
 <body class="join" data-page="join">
 

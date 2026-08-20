@@ -867,3 +867,8 @@ button:focus-visible,
 @media (prefers-reduced-motion: reduce) {
   .odo__reel { transition: none !important; }
 }
+
+/* 數字未定案前先藏起來（格子照樣佔位、底色照舊，所以沒有版面跳動）。
+   由 join/index.html 的 head 內嵌腳本加上，join.js 一有值就移除；
+   那段腳本另有 2.5 秒保險，JS 掛掉也不會永遠空白。 */
+.counter-pending .odo__d { color: transparent; }
