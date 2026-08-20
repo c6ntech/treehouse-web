@@ -263,3 +263,30 @@ repo 在 c6ntech org，但這台 Mac 的 git 預設認證是 hytmots，直接 pu
 
 重點：`utm_content` 每篇貼文都要不同且全小寫。程式把網址參數名稱**原樣**帶進 GA4，
 不做大小寫正規化，`utm_Source` 會對不上後台註冊的 `utm_source`。
+
+## 頁尾（08-20 起關閉，App 正式上線要開回來）
+
+`footer.enabled = false`。頁尾（treehouse 字標 + 隱私權政策／使用條款／刪除帳戶／
+常見問題 + 版權）在 Beta 期間先不顯示，Morgan 2026-08-20 決定，理由是想等 App 正式
+上線再一起加上。
+
+HTML 裡 `#joinFooter` 預設就帶 `hidden`，旗標打開時才由 join.js 移除 —— 這樣 JS
+沒跑到也不會先閃一下才消失。實測：關閉時高度 0、不佔版位；打開時高度 162。
+
+⚠️ **正式上線前要記得開回來**（`join.config.js` 的 `footer.enabled` 改 true）。
+本頁有載入 GA4，一般慣例會在頁面上留一個隱私權政策的入口；Beta 期間頁面本身不收資料
+（報名走 Google 表單）所以影響有限，但這是暫時狀態，不是最終設計。
+
+## 分享卡 `assets/join/og-image.png`
+
+是把 `/join` 在 1200x630 視窗下**截真實首屏**產生的靜態圖（`tools/build-og-image.sh`），
+所以卡片上的東西會隨時間過時：
+
+- **報名人數**：08-20 已重截為 `00115`（Sheet 起算值由 298 改為 113）。之後頁面數字
+  會繼續長，卡片不會。
+- **倒數**：現在卡片上印著「6 天 13 時 33 分 56 秒」。這比數字更糟 —— 秒數在靜態圖上
+  永遠是錯的，天數每天差一天。
+
+**未決（Morgan 08-20 表示明天再處理）**：把卡片上的數字改成 `???` 之類不會過時的呈現。
+倒數建議一併處理，兩者是同一類問題。在那之前每次改 `signup` 或 `countdown` 設定後
+都要重跑 `PORT=<port> bash tools/build-og-image.sh`（需本機 static server + gstack browse）。

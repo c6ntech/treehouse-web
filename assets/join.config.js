@@ -85,6 +85,16 @@ window.JOIN_CONFIG = {
     androidUrl: null                   // Google Play 連結，Public Release 前補
   },
 
+  // ---- 頁尾 ----
+  // 頁尾（treehouse 字標 + 隱私權政策／使用條款／刪除帳戶／常見問題 + 版權）。
+  // Beta 期間先關掉，等 App 正式上線再打開 —— Morgan 2026-08-20 決定。
+  // ⚠️ 打開之前請注意：本頁有載入 GA4，一般慣例會在頁面上留一個隱私權政策的入口。
+  //    Beta 期間頁面本身不收資料（報名走 Google 表單），影響有限，但正式上線前
+  //    這個 footer 應該要開回來。
+  footer: {
+    enabled: false
+  },
+
   // ---- GA4 ----
   // 資源建立於公司帳號 admin@cherryontech.com。事件資料保留期限已設 14 個月。
   // 後台已註冊的自訂維度（事件範圍），參數名稱必須跟程式送出的 key 完全一致：

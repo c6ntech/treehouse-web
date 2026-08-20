@@ -18,6 +18,7 @@
     pricing: { enabled: false, amountLabel: "NT$240", trialDuration: "30 天" },
     countdown: { enabled: false, targetIso: null },
     cta: { mode: "form", formBaseUrl: "https://forms.gle/oKRJeB39md3gFTvH9", iosUrl: null, androidUrl: null },
+    footer: { enabled: false },
     ga4: { measurementId: null }
   };
 
@@ -39,6 +40,7 @@
     pricing: mergeSection("pricing"),
     countdown: mergeSection("countdown"),
     cta: mergeSection("cta"),
+    footer: mergeSection("footer"),
     ga4: mergeSection("ga4")
   };
 
@@ -805,6 +807,10 @@
         gaSafe("event", "cta_click", payload);
       });
     }
+
+    // 頁尾：預設在 HTML 裡就帶 hidden，旗標打開才顯示（見 join.config.js 的 footer）
+    var joinFooter = document.getElementById("joinFooter");
+    if (CFG.footer.enabled && joinFooter) joinFooter.hidden = false;
 
     initCarousel();
   }

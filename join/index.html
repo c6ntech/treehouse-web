@@ -183,8 +183,10 @@
 
 </main>
 
-<!-- ══ 10 · Footer ══ -->
-<footer class="site-footer">
+<!-- ══ 10 · Footer ══
+     由 join.config.js 的 footer.enabled 控制，預設關閉（App 正式上線後再打開）。
+     預設就帶 hidden，所以 JS 沒跑到也不會先閃一下才消失。 -->
+<footer class="site-footer" id="joinFooter" hidden>
   <div class="shell">
     <p class="site-footer__wordmark">treehouse</p>
     <nav class="site-footer__links" aria-label="頁尾連結">
