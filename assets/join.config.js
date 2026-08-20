@@ -12,7 +12,6 @@ window.JOIN_CONFIG = {
   signup: {
     mode: "sheet",           // "sheet" = 讀 Google Sheet 即時值（正式模式）。"mock" = 只顯示 baseValue，完全不對外連線
     baseValue: 298,            // mode:"mock" 時的顯示值，或 mode:"sheet" 但抓取失敗時的最後防線
-    label: "報名人數",
     round: "floor",             // "floor" 無條件捨去到整數；"none" 不處理（Sheet 應該本來就是整數）
 
     // ⚠️ 這份試算表會被公開讀取（Google 的 gviz 端點要求整份表可公開存取）。

@@ -13,7 +13,7 @@
 
   // ---- Config：內建預設值 + 淺合併 window.JOIN_CONFIG，任一欄位打錯只影響該欄位 ----
   var DEFAULTS = {
-    signup: { mode: "mock", baseValue: 298, label: "報名人數", round: "floor", sheetUrl: null, pollMs: 600000 },
+    signup: { mode: "mock", baseValue: 298, round: "floor", sheetUrl: null, pollMs: 600000 },
     genderRatio: { enabled: false, csvUrl: null, pauseThreshold: 0.55, pollMs: 600000 },
     pricing: { enabled: false, amountLabel: "NT$240", trialDuration: "30 天" },
     countdown: { enabled: false, targetIso: null },
@@ -237,6 +237,8 @@
     return Math.max(0, n);
   }
 
+  // 只畫格子。計數動畫每一幀都會呼叫這支，所以這裡不寫 data-value、
+  // 也不做任何會被輔助科技播報的事（見 setCountValue）。
   function paintOdometer(el, value) {
     var digits = el.querySelectorAll(".odo__d");
     if (!digits.length) { el.textContent = String(value); return; } // 舊版 DOM 的退路
@@ -250,13 +252,25 @@
       if (i < leadCount) digits[i].classList.add("odo__d--lead");
       else digits[i].classList.remove("odo__d--lead");
     }
-    el.setAttribute("data-value", String(normalizeCount(value)));
+  }
+
+  // 落定值：寫 data-value 與 aria-label，只在動畫結束（或直接跳值）時呼叫一次。
+  //
+  // #signupNumber 是 role="img"，輔助科技只讀 aria-label，不會把五個位數格
+  // 逐格念成「零 零 二 九 八」。也刻意不要放 aria-live —— 計數動畫每幀都會
+  // 改內容，live region 會把整段動畫播報成一長串數字。人數十分鐘才更新一次，
+  // 不需要即時播報。
+  function setCountValue(el, value) {
+    var v = normalizeCount(value);
+    paintOdometer(el, v);
+    el.setAttribute("data-value", String(v));
+    el.setAttribute("aria-label", String(v));   // 單位「人」在隔壁的 .signboard__unit，這裡不要重複
   }
 
   function animateCountTo(el, target) {
     if (countAnim.raf) { cancelAnimationFrame(countAnim.raf); countAnim.raf = null; }
     if (reduceMotion) {
-      paintOdometer(el, target);
+      setCountValue(el, target);
       countAnim.from = target;
       return;
     }
@@ -271,6 +285,7 @@
       if (p < 1) {
         countAnim.raf = requestAnimationFrame(step);
       } else {
+        setCountValue(el, target);   // 落定才寫 data-value / aria-label
         countAnim.from = target;
         countAnim.raf = null;
       }
@@ -427,8 +442,19 @@
       paintBars();
       return;
     }
+
+    // 輪播捲出畫面就不要繼續跑。沒有這道閘，50ms 的 timer 會在整個分頁生命週期
+    // 一直轉，使用者捲到頁尾看定價時也在燒電，而且回頭看輪播時已經自己跳過好幾張。
+    var onScreen = true;
+    if ("IntersectionObserver" in window) {
+      onScreen = false;
+      new IntersectionObserver(function (entries) {
+        onScreen = entries[entries.length - 1].isIntersecting;
+      }, { threshold: 0.25 }).observe(stage);
+    }
+
     setInterval(function () {
-      if (document.hidden || drag !== null) return;
+      if (document.hidden || drag !== null || !onScreen) return;
       prog += TICK / DWELL;
       if (prog >= 1) { goStep(1, false); return; }
       paintBars();
@@ -442,7 +468,7 @@
     loadGA4();
 
     var numberEl = document.getElementById("signupNumber");
-    if (numberEl) paintOdometer(numberEl, CFG.signup.baseValue);
+    if (numberEl) setCountValue(numberEl, CFG.signup.baseValue);
 
     function refreshSignup() {
       fetchSignupCount()

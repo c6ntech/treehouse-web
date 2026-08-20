@@ -27,7 +27,9 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 SRC="handoff/assets/fonts"
 OUT="assets/fonts"
-PYFT=(~/.local/bin/uvx --quiet --with brotli --from fonttools pyftsubset)
+UVX=$(command -v uvx || echo "$HOME/.local/bin/uvx")
+[ -x "$UVX" ] || { echo "找不到 uvx（https://docs.astral.sh/uv/）" >&2; exit 1; }
+PYFT=("$UVX" --quiet --with brotli --from fonttools pyftsubset)
 
 [ -d "$SRC" ] || { echo "找不到原始 TTF：$SRC" >&2; exit 1; }
 mkdir -p "$OUT"
@@ -85,7 +87,8 @@ for W in 400:Regular 700:Bold; do
   subset "$SRC/NotoSansTC-$NAME.ttf" "$OUT/noto-sans-tc-$WEIGHT-critical.woff2" "$CRIT_RANGE"
   i=0
   for R in "${REST_RANGES[@]}"; do
-    subset "$SRC/NotoSansTC-$NAME.ttf" "$OUT/noto-sans-tc-$WEIGHT-rest-$i.woff2" "$R" || true
+    # 不要吞錯：任何一塊沒產生出來，fonts.css 還是會宣告它，線上就是 404
+    subset "$SRC/NotoSansTC-$NAME.ttf" "$OUT/noto-sans-tc-$WEIGHT-rest-$i.woff2" "$R"
     i=$((i + 1))
   done
 done
