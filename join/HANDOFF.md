@@ -1,6 +1,6 @@
 # /join — 進度交接（跨機器接續用）
 
-最後更新：2026-08-20 傍晚，Windows，`main`（`feature/join-beta-recruit` 已 squash merge
+最後更新：2026-08-21 下午（Windows 關機前同步），`main`（`feature/join-beta-recruit` 已 squash merge
 並刪除；本檔前兩版分別為 08-19 Windows 與 08-20 Mac，內容已被這一版取代）。
 
 **上線時程：8/21（五）網頁要上線，8/25（二）12:00 Beta 開始發連結。**
@@ -324,3 +324,71 @@ HTML 裡 `#joinFooter` 預設就帶 `hidden`，旗標打開時才由 join.js 移
 **未決（Morgan 08-20 表示明天再處理）**：把卡片上的數字改成 `???` 之類不會過時的呈現。
 倒數建議一併處理，兩者是同一類問題。在那之前每次改 `signup` 或 `countdown` 設定後
 都要重跑 `PORT=<port> bash tools/build-og-image.sh`（需本機 static server + gstack browse）。
+
+
+---
+
+# 2026-08-21 關機前狀態快照
+
+`main` = `9bf6d17`，working tree 乾淨，本機與 `origin/main` 同一個 commit。
+`design-baseline` 本機與遠端也同步（`43a1b4c`）。網頁相關的東西**全部在 GitHub 上**。
+
+線上實測（https://gettreehouse.app/join/）：
+
+| 項目 | 狀態 |
+|---|---|
+| 報名人數 | 225（Sheet B1；113 起算 + 112 表單填答） |
+| 男女比 | 51% / 49% |
+| 倒數 | 5 天（目標 2026-08-27 12:00 +08:00） |
+| 頁尾 | 隱藏（`footer.enabled: false`） |
+| GA4 | `gtag` 已載入，`G-J6XWVKCZXS` |
+| Sheet 抓取 | 正常，`__JOIN_DEBUG__.lastError` 為空 |
+| Console | 無錯誤 |
+
+## Google Sheet 的坑（08-20 深夜踩過一次，記下來）
+
+**症狀**：網頁顯示 259，但表單其實只有 46 筆。查下來是儀表板 B3 的
+`新表單報名數` 數出 146。
+
+**原因**：`COUNTA` 數的是「非空白儲存格」不是「列」。`IMPORTRANGE` 的範圍字串
+若跨了多欄（例如 `A2:C`），46 個人就會被數成三倍。
+
+**更重要的第二層問題**：`IMPORTRANGE` 的範圍是**字串**，不像一般參照會跟著欄位
+插入自動位移。Morgan 後來在回應分頁最前面插了一欄自用，時間戳記從 A 移到 B ——
+儀表板那條寫死的字串不會跟著改，只會靜靜地數錯欄，**不會報錯**。
+
+**建議的長久解法**（08-21 已建議，Morgan 自行決定是否套用）：把計算搬回私有表，
+儀表板只拉一格。
+
+- 私有表新增一個分頁（例如 `stats`），`A1` 放 `=COUNTA('表單回應 1'!B2:B)`
+  —— 這是同份試算表內的一般參照，之後插欄會自動變成 `C2:C`，不用人工維護。
+- 儀表板 B3 改成 `=IFERROR(IMPORTRANGE("<私有表ID>","stats!A1"),0)`
+  —— `stats!A1` 這個位置永遠不動。
+
+**檢查方式**：`curl` 打 gviz 端點看 B1，跟表單實際筆數對一下。
+數字停住不動、或跟表單差很多，先懷疑這條公式。
+
+```
+curl -s "https://docs.google.com/spreadsheets/d/105ymHSvKcdbQ33xiKtSXF0DPkltpWZYmR2frPQCMTPs/gviz/tq?tqx=out:json&range=B1&t=$(date +%s)"
+```
+
+## 沒有進 repo 的檔案（Windows 本機，關機後留在這台）
+
+`C:\Projects\Treehouse App Beta Recruiting Website\`：
+
+- `Treehouse_招募網頁_規格書_for_CC.md.docx`、`Treehouse_Beta_Test_Program_v4.docx` — 規格與流程
+- `Treehouse_舊名單_Beta追蹤_v4.xlsx`、`Treehouse_Beta_訊息清單_v2.xlsx` — **含真實個資**，刻意不進 git
+- `PROMPT_1_GA4設定.md`、`PROMPT_2_開始日期討論.md` — 給 Claude web 的 prompt，兩件事都已完成，任務結束
+- `ios-store-image/`、`楓之谷預熱網頁參考.png` — 素材原始檔（壓縮版已在 repo 內）
+
+這些**不影響**在別台機器接手網頁工作 —— 該吸收的內容都已經寫進 repo 裡的註解與本文件。
+
+## 明天（08-21 之後）待辦
+
+1. **分享卡 `og-image.png` 上的動態值** —— 現在烤進了報名人數與倒數（含秒數）。
+   Morgan 08-20 說隔天處理，方向是把數字改成不會過時的呈現（例如 `???`）。
+   倒數建議一併處理，是同一類問題。
+2. **頁尾** —— App 正式上線時把 `footer.enabled` 改回 `true`。
+3. **外包 CSV** —— 到手後把 `genderRatio.mode` 改成 `"csv"` 並填 `csvUrl`。
+4. **內部流量排除** —— Morgan 在 GA4 後台補（原訂 08-22）。
+5. App Store／Google Play 連結（Public Release 前）。
