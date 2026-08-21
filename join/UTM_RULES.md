@@ -3,6 +3,7 @@
 給發文的人看的。目的只有一個：**發文之後能回答「哪一篇貼文帶進多少人、多少人按了報名」。**
 
 工具在 <https://gettreehouse.app/join/utm-tool/>（不會被搜尋引擎索引，存書籤即可）。
+**拿到連結還不能直接發** —— 發文前要先重截分享卡並叫 Meta 重抓，見第二之二節。
 開頁就會依今天日期把代稱填好，選平台、按複製就能用。這份文件是給你了解規則、
 以及工具不夠用時查的。
 
@@ -111,6 +112,34 @@ https://l.threads.com/?u=<原連結整條 URL-encode>&e=<Threads 的簽章>
 `u` 就是你貼上去的原網址，點下去會轉址過去、query string 原樣保留，所以 GA4 照樣
 收得到 UTM。要驗證發出去的是哪一個代稱，把 `u` 的值 URL-decode 開來看即可。
 副作用只有 referrer 會變成 `l.threads.com`，但我們靠的是 `utm_source` 不是 referrer。
+
+---
+
+## 二之二、發文前的固定檢查（每次拿到新連結都要跑一次）
+
+**分享卡 `assets/join/og-image.png` 是靜態圖**，把當下的報名人數與倒數（連秒數）
+烤了進去。而且 `og:image` 的網址永遠是同一個 `/assets/join/og-image.png` ——
+Meta 會照網址快取，圖換了它不一定知道。所以每次發文前兩步驟：
+
+1. **重截分享卡**（要本機 static server + gstack browse）：
+   ```
+   python3 -m http.server 8787          # 另開一個終端機
+   PORT=8787 bash tools/build-og-image.sh
+   ```
+   截圖前確認頁面讀到的是 Sheet 即時值，不是後備的 `signup.baseValue` ——
+   在瀏覽器 console 看 `__JOIN_DEBUG__.lastGoodFetch.sheet`，有值才對。
+   截完 commit + push 到 `main` 才會上線。
+
+2. **叫 Meta 重抓**：<https://developers.facebook.com/tools/debug/> 貼上
+   `https://gettreehouse.app/join/` → 按 **Scrape Again** → 確認 `Time Scraped`
+   變成剛剛、`Link Preview` 是新的那張。**愈接近發文時間按愈好**，卡片上的倒數
+   是烤死的。
+
+那頁上這幾項是雜訊，不用管：`Missing Properties: fb:app_id`（給 Facebook Insights
+用的，跟分享卡無關）、`Response Code 206`（爬蟲 range request 的正常回應）、
+`0 likes, shares and comments`（那是 Facebook 的互動數，Threads 不算在內）。
+
+⚠️ 已經發出去的貼文，卡片不會跟著更新 —— Threads 在你貼上連結那一刻就把卡片定住了。
 
 ---
 
