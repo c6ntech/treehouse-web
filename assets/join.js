@@ -464,8 +464,21 @@
     var maleBar = document.getElementById("genderMaleBar");
     var femalePctEl = document.getElementById("genderFemalePct");
     var malePctEl = document.getElementById("genderMalePct");
+    // 男性不各自四捨五入，從女性推導 —— 兩邊各自進位時（真實比例剛好落在 x.5，
+    // 例如 男101/女99）會顯示 女50% + 男51% = 101%，下面兩條 bar 的寬度也會加起來
+    // 溢出 100%。policy 模式碰不到（那邊 malePct 本來就是 1 - femalePct，加總必然
+    // 100），是 csv 模式才會中的坑，先在這裡擋掉。
+    // hasData：csv 模式 total=0 時兩邊都是 0（見 fetchGenderRatio），這種情況要維持
+    // 0/0，不能推導成男性 100%。前提是兩邊都是 number —— 目前兩個資料源都保證是
+    // （policy 自己算的、csv 在 fetchGenderRatio 有 isFinite 擋），將來若新增第三個
+    // 來源（例如把後端 JSON 原樣丟進來）要自己確保型別，字串會讓這個判斷式失效。
+    //
+    // 誤差方向是刻意的：女性先四捨五入，男性吸收全部誤差。Math.round 半數進位，
+    // 所以真實比例剛好落在 x.5 時永遠倒向女性。policy 模式的 49–53 帶寬碰不到 .5，
+    // 但 csv 模式上線後會 —— 屆時若不想固定偏女性，要改成大的那邊優先進位。
+    var hasData = (r.femalePct + r.malePct) > 0;
     var fPct = Math.round(r.femalePct * 100);
-    var mPct = Math.round(r.malePct * 100);
+    var mPct = hasData ? 100 - fPct : 0;
     if (femaleBar) femaleBar.style.width = fPct + "%";
     if (maleBar) maleBar.style.width = mPct + "%";
     if (femalePctEl) femalePctEl.textContent = fPct + "%";
