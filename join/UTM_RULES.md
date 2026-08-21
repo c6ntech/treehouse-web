@@ -18,7 +18,7 @@ https://gettreehouse.app/join/?utm_source=<平台>&utm_medium=<類型>&utm_campa
 
 | 參數 | 怎麼填 | 說明 |
 |---|---|---|
-| `utm_source` | `threads` / `ig` / `line` | 貼在哪個平台。工具的下拉選單就是這個 |
+| `utm_source` | `threads` | **這一波只發 Threads**，固定填這個（Morgan 2026-08-21 確認）。工具下拉選單仍留 ig / line，未來要用再選 |
 | `utm_medium` | 由 source 自動決定 | threads、ig → `social`；line → `message`。不用自己選 |
 | `utm_campaign` | `beta_recruit_join` | 這一波招募固定用這個，換波才換（見第三節） |
 | `utm_content` | `MMDD` + `d` + 第幾天 | **唯一每篇要換的東西**。工具會自動帶 |
@@ -50,6 +50,10 @@ https://gettreehouse.app/join/?utm_source=<平台>&utm_medium=<類型>&utm_campa
 3. **每篇的 `utm_content` 都要不一樣。** 兩篇用同一個代稱，數據會被合併，
    分不出哪篇有效。
 4. **代稱一旦用出去就不要改。** 改了等於變成新的一篇，前後數據接不起來。
+5. **這一波的 `utm_source` 只有 `threads`。** Beta 招募只在 Threads 發文，IG／LINE
+   目前沒有發（Morgan 2026-08-21 確認）。工具的下拉選單保留另外兩個平台是為了以後，
+   現階段一律用預設的 Threads，不要自己換成 `ig` 或 `line` —— 換了報表上會多出
+   一個沒有真實流量對應的來源。
 
 ---
 
@@ -73,13 +77,40 @@ https://gettreehouse.app/join/?utm_source=threads&utm_medium=social&utm_campaign
 https://gettreehouse.app/join/?utm_source=threads&utm_medium=social&utm_campaign=beta_recruit_join&utm_content=0821d2
 ```
 
-**LINE 官方帳號群發：**
+**LINE 官方帳號群發（這一波沒有用，留著當以後的格式參考）：**
 
 ```
 https://gettreehouse.app/join/?utm_source=line&utm_medium=message&utm_campaign=beta_recruit_join&utm_content=0820d1
 ```
 
 （不同平台可以用同一個 `utm_content`，因為 `utm_source` 已經分得開。）
+
+---
+
+## 二之一、已經發出去的連結（發一篇就補一行）
+
+只記真的貼出去的，沒發的不要寫進來 —— 這張表是日後對 GA4 數字時唯一的依據。
+
+| 日期 | 代稱 | 平台 | 連結 |
+|---|---|---|---|
+| 2026-08-20 | `0820d1` | threads | `https://gettreehouse.app/join/?utm_source=threads&utm_medium=social&utm_campaign=beta_recruit_join&utm_content=0820d1` |
+| 2026-08-21 | `0821d2` | threads | `https://gettreehouse.app/join/?utm_source=threads&utm_medium=social&utm_campaign=beta_recruit_join&utm_content=0821d2` |
+
+8/20 那筆已於 2026-08-21 從貼文本體回推確認，四個參數與上表一致。
+（HANDOFF.md 的 GA4 驗證表裡出現過 `utm_content: "d1_intro"`，那是 8/20 20:29 做事件
+實測時手打的值，不是真的發出去的連結，不用管。）
+
+### Threads 會把連結包一層
+
+從 Threads 貼文複製回來的連結長這樣，**這是正常的，不是連結被改掉**：
+
+```
+https://l.threads.com/?u=<原連結整條 URL-encode>&e=<Threads 的簽章>
+```
+
+`u` 就是你貼上去的原網址，點下去會轉址過去、query string 原樣保留，所以 GA4 照樣
+收得到 UTM。要驗證發出去的是哪一個代稱，把 `u` 的值 URL-decode 開來看即可。
+副作用只有 referrer 會變成 `l.threads.com`，但我們靠的是 `utm_source` 不是 referrer。
 
 ---
 
@@ -124,5 +155,5 @@ GA4 → 事件 `cta_click`，用 `utm_content` 拆分，就是每篇貼文各帶
 
 ---
 
-最後更新：2026-08-20。規則有變請一起更新 `join/utm-tool/index.html`
+最後更新：2026-08-21（加上「只發 Threads」與已發連結記錄）。規則有變請一起更新 `join/utm-tool/index.html`
 （`CAMPAIGN`、`CAMPAIGN_START`、`defaultContent()` 與畫面上的說明文字）。
