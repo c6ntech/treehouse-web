@@ -142,7 +142,8 @@ IMPORTRANGE 把私有表整包拉出來（授權是綁在試算表上，不是�
 ## 卡著、擋路的事
 
 - **外包 CSV** → 尚未取得。有了之後把 `genderRatio.mode` 從 `"policy"` 改成 `"csv"`
-  並填 `csvUrl`，就會改讀 App 後台真實數字。
+  並填 `csvUrl`，就會改讀 App 後台真實數字。**切模式那天有三件事要一起處理，
+  見下面「csv 模式上線前要補的三件事」。**
 - App Store／Google Play 連結（Public Release 前給）。
 - **網頁以外的 8/25 → 8/27 連動**（不是 CC 的工作範圍，但漏了會出事）：
   《Treehouse_Beta_訊息清單_v2.xlsx》三組受眾的階段①②、Google 表單送出前後的說明
@@ -213,6 +214,30 @@ App 內的自動性別平衡尚未開啟，實際上是 Morgan 依計畫書手�
 08-20 已 `enabled: true` 上線。CC 曾提出區塊標題「目前報名性別比」與數字代表的
 「派發比例」語意不同、建議改文案，Morgan 決定文案不動、功能照做。這是已經過的討論，
 不用再提。
+
+## csv 模式上線前要補的三件事（2026-08-21 code review 發現）
+
+切 `genderRatio.mode: "csv"` 那天要一起處理，現在 policy 模式碰不到所以不急，
+但漏了會在真實數字上線那天才爆。
+
+1. **`data-status` 是 dead code。** `renderGenderRatio()` 會把 `open` /
+   `paused_male` / `paused_female` 寫進 `#genderRatio` 的 `data-status`，但全 repo
+   沒有任何 CSS 或 JS 讀它 —— 畫面上完全沒有表現。policy 模式永遠是 `open`
+   （帶寬 49–53 遠低於 `pauseThreshold: 0.55`）所以看不出來；csv 接上真實數字後
+   一方超過 55% 就會觸發，那時需要有對應的視覺（例如「男性報名暫停開放中」的標示），
+   否則寫了等於沒寫。
+
+2. **csv 欄位驗證只擋 `isFinite`，負數會過關。** `fetchGenderRatio()` 只檢查
+   `isFinite(male) / isFinite(female)`，`-5` 這種值會一路算下去。負的百分比丟給
+   `style.width` 會被 CSS 忽略、bar 停在前一次的寬度，畫面靜默錯掉不會報錯。
+   接 CSV 那天順手加一行 `if (male < 0 || female < 0) throw`。
+
+3. **四捨五入的誤差固定由男性吸收。** `renderGenderRatio()` 是女性先 `Math.round`、
+   男性 `= 100 - fPct`。`Math.round` 半數進位，所以真實比例剛好落在 x.5（例如
+   男 101／女 99）時永遠倒向女性。這是為了保證加總恆等 100 的刻意取捨，policy 的
+   49–53 帶寬碰不到 .5，但 csv 的真實數字會。不想固定偏女性的話，改成「人數多的
+   那邊優先進位」。另外極端比例下（例如 男1／女199）男性會顯示 0%、bar 寬 0，
+   把非零族群畫成 0 —— 實務上離 `pauseThreshold` 很遠，碰不到。
 
 ## 計數器進場滾動（08-20 已整合，線上生效）
 
@@ -397,6 +422,7 @@ curl -s "https://docs.google.com/spreadsheets/d/105ymHSvKcdbQ33xiKtSXF0DPkltpWZY
    Morgan 08-20 說隔天處理，方向是把數字改成不會過時的呈現（例如 `???`）。
    倒數建議一併處理，是同一類問題。
 2. **頁尾** —— App 正式上線時把 `footer.enabled` 改回 `true`。
-3. **外包 CSV** —— 到手後把 `genderRatio.mode` 改成 `"csv"` 並填 `csvUrl`。
+3. **外包 CSV** —— 到手後把 `genderRatio.mode` 改成 `"csv"` 並填 `csvUrl`，
+   並處理下面那三件事（`paused_*` 沒有視覺、負數沒擋、誤差固定偏女性）。
 4. **內部流量排除** —— Morgan 在 GA4 後台補（原訂 08-22）。
 5. App Store／Google Play 連結（Public Release 前）。
