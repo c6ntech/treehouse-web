@@ -141,14 +141,106 @@
     return JSON.parse(text.slice(start, end + 1));
   }
 
+  // =========================================================================
+  // 上次抓到的人數 — localStorage 暫存
+  //
+  // 抓 Sheet 失敗時（網路瞬斷、Google 偶發 5xx、行動網路切換）原本會掉回
+  // join.config.js 的 baseValue。那個值是 Sheet B2 的「起算值」，隨著報名累積
+  // 會離真實數字愈來愈遠 —— 2026-08-22 實際發生過一次：真值 310，訪客看到 113。
+  // 所以改成優先用「這個瀏覽器上次抓到的真值」，沒有才退回 baseValue。
+  //
+  // 進場滾動的落點與抓失敗時的顯示值都會用到它（成功路徑會把真值寫回去）。
+  // localStorage 在 Safari
+  // 無痕模式、webview 停用儲存等情況會直接 throw，所以每個存取都包 try/catch，
+  // 失敗就當作沒有快取（退回 baseValue），不能讓它把整頁弄掛。
+  // =========================================================================
+  // key 綁 sheet id：換統計表（或改起算值口徑）之後，舊瀏覽器上的舊數字自動失效，
+  // 不需要也沒辦法遠端清掉別人的 localStorage。
+  var COUNT_CACHE_KEY = "th_join_signup_count:" + (extractSheetId(CFG.signup.sheetUrl) || "none");
+  // 24 小時。這個值只需要撐過「一次網路抖動到下一次成功輪詢」，量級是分鐘；
+  // 放太久的壞處是統計口徑改了之後有人還在看舊數字。
+  var COUNT_CACHE_MAX_AGE = 24 * 60 * 60 * 1000;
+
+  // 判定失效就順手刪掉，免得除錯時看到一個永遠對不上的殘值
+  function dropCache() {
+    try { window.localStorage.removeItem(COUNT_CACHE_KEY); } catch (e) {}
+    return null;
+  }
+
+  function readCachedCount() {
+    try {
+      var raw = window.localStorage.getItem(COUNT_CACHE_KEY);
+      if (!raw) return null;
+      var obj = JSON.parse(raw);
+      var v = Number(obj && obj.v), t = Number(obj && obj.t);
+      // 上界：計數器只有五格，超過五位數就不是真實報名數（多半是有人自己改了
+      // localStorage）。放行的話 aria-label 會念出七位數、滾輪卻只顯示後五位，兩邊對不上。
+      if (!isFinite(v) || v <= 0 || v > 99999) return dropCache();
+      if (!isFinite(t)) return dropCache();
+      var age = Date.now() - t;
+      // age 為負 = 時間戳在未來（使用者調過系統時鐘）。不擋的話永遠不會過期。
+      if (age > COUNT_CACHE_MAX_AGE || age < -60000) return dropCache();
+      return Math.floor(v);
+    } catch (e) { return dropCache(); }   // 連 JSON 都不是（或 localStorage 讀不到）
+  }
+
+  function writeCachedCount(n) {
+    if (!isFinite(n) || n <= 0) return;     // 0／負數不進快取，免得把好值洗掉
+    try { window.localStorage.setItem(COUNT_CACHE_KEY, JSON.stringify({ v: Math.floor(n), t: Date.now() })); }
+    catch (e) { /* 存不了就算了，只是少一層保險 */ }
+  }
+
+  // 抓不到時要顯示什麼：上次的真值優先，沒有才用設定檔的 baseValue。
+  // mock 模式與「還沒填 sheetUrl」不吃快取 —— join.config.js 對 mock 的定義是
+  // 「只顯示 baseValue、完全不對外連線」，讓回訪者看到快取的真值會違反那個契約。
+  function fallbackCount() {
+    if (CFG.signup.mode !== "sheet" || !CFG.signup.sheetUrl) return CFG.signup.baseValue;
+    var c = readCachedCount();
+    window.__JOIN_DEBUG__.cachedCount = c;
+    // 取大的：報名數只增不減，而 baseValue 現在會跟著重截分享卡對齊當下真值
+    // （tools/build-og-image.sh）。快取若比它舊，用 baseValue 反而更接近真實。
+    return c === null ? CFG.signup.baseValue : Math.max(c, CFG.signup.baseValue);
+  }
+
+  // 逾時：行動網路下 fetch 可以懸掛數十秒到數分鐘。沒有上限的話，in-flight 旗標會
+  // 一直是 true，輪詢／online／回到前景三條補抓路徑全部被吞掉，畫面凍在後備值。
+  var FETCH_TIMEOUT_MS = 8000;
+
   function fetchSignupCount() {
     if (CFG.signup.mode !== "sheet") return Promise.resolve(null);
+    // fetch 不存在（很舊的 WebView）時直接當作「沒有資料源」，不要同步丟例外 ——
+    // 這支是在 init() 裡呼叫的，丟出去會讓後面的輪播、倒數、CTA 全部沒註冊。
+    if (typeof fetch !== "function") return Promise.resolve(null);
     var id = extractSheetId(CFG.signup.sheetUrl);
     if (!id) return Promise.resolve(null); // 網址還沒填，維持 baseValue，不算錯誤
     var url = "https://docs.google.com/spreadsheets/d/" + id + "/gviz/tq?tqx=out:json&range=B1&t=" + Date.now();
-    return fetch(url, { cache: "no-store" })
+
+    var ctrl = null, timer = null, opts = { cache: "no-store" };
+    if (typeof AbortController === "function") {
+      ctrl = new AbortController();
+      opts.signal = ctrl.signal;
+      timer = setTimeout(function () { ctrl.abort(); }, FETCH_TIMEOUT_MS);
+    }
+    function done(v) { if (timer) { clearTimeout(timer); timer = null; } return v; }
+
+    var req = fetch(url, opts);
+    // 沒有 AbortController 的瀏覽器（舊 Safari／舊 Android WebView）用 Promise.race
+    // 補一個逾時。請求本身取消不掉，但至少 promise 會 settle，旗標不會卡死。
+    if (!ctrl) {
+      req = Promise.race([req, new Promise(function (_, reject) {
+        timer = setTimeout(function () { reject(new Error("sheet: 逾時 " + FETCH_TIMEOUT_MS + "ms")); }, FETCH_TIMEOUT_MS);
+      })]);
+    }
+
+    return req
       .then(function (res) {
-        if (!res.ok) throw new Error("sheet http " + res.status);
+        if (!res.ok) {
+          var e = new Error("sheet http " + res.status);
+          // 4xx（429 除外）是永久性錯誤：表被刪、權限被收回、網址打錯。
+          // 重試只是白打，而且每次都帶 t= 破快取，中間層無法去重。
+          e.permanent = res.status >= 400 && res.status < 500 && res.status !== 429;
+          throw e;
+        }
         return res.text();
       })
       .then(function (text) {
@@ -156,10 +248,16 @@
         var row = data.table && data.table.rows && data.table.rows[0];
         var cell = row && row.c && row.c[0];
         var val = cell ? cell.v : null;
+        // B1 空白時 gviz 會回 null。Number(null) 是 0 而且 isFinite(0) 為真，
+        // 放過去就會被當成「抓到 0 人」：畫面顯示 00000，還會把好的快取覆蓋掉。
+        // IMPORTRANGE 重算期間就可能短暫回空值，所以這裡當成錯誤、走重試。
+        if (val === null || val === undefined || val === "") throw new Error("sheet: B1 是空的");
         var num = Number(val);
         if (!isFinite(num)) throw new Error("sheet: B1 not numeric (" + val + ")");
+        if (num <= 0) throw new Error("sheet: B1 不是正數 (" + num + ")");
         return num;
-      });
+      })
+      .then(done, function (err) { done(); throw err; });
   }
 
   // =========================================================================
@@ -702,7 +800,7 @@
 
     // 進場滾動「立刻」開始，而且刻意不先把 baseValue 畫上去 —— 先畫再滾，
     // 重新整理時會先看到 298 再跳成真值，那個閃動很明顯。
-    // 滾輪起跑時落點先用 baseValue，等 fetch 回來（實測約 300ms，遠早於第一條
+    // 滾輪起跑時落點先用後備值（上次抓到的真值優先，見 fallbackCount），等 fetch 回來（實測約 300ms，遠早於第一條
     // 帶子停止的 900ms）由 retargetRoll 把落點換成真值，中途換末端看不出來。
     // reduceMotion 時不播動畫（尊重系統偏好），但也不能先把 baseValue 畫上去 ——
     // 那會變成「先顯示 298、fetch 回來再跳 300」，跟播動畫那條路徑要避免的閃動一樣。
@@ -715,46 +813,129 @@
         ROLL.settled = true;
         fallbackTimer = setTimeout(function () {
           fallbackTimer = null;
-          setCountValue(numberEl, CFG.signup.baseValue);
+          setCountValue(numberEl, fallbackCount());
           revealCounter();
         }, 900);
       } else {
-        rollIn(numberEl, CFG.signup.baseValue);
+        rollIn(numberEl, fallbackCount());
       }
     }
 
-    function refreshSignup() {
+    // 抓失敗後的退避重試。輪詢間隔是 10 分鐘，沒有重試的話一次 0.5 秒的網路抖動
+    // 會讓訪客盯著錯的數字看十分鐘（2026-08-22 就發生過）。首次 + 三次重試共四次
+    // 嘗試，都失敗才認輸；認輸也只是維持畫面上的後備值，下一輪輪詢照樣會再試。
+    //
+    // 第一次重試刻意壓在 800ms（jitter 後 560~1040ms）—— 進場滾動約 2010ms 才收尾，
+    // 這之前抵達的值會透過 retargetRoll 換落點，看不出來。但這只在第一次嘗試「很快
+    // 就失敗」時成立；若它是走滿 8 秒逾時才失敗，重試會落在滾動收尾之後，數字就會
+    // 像每次輪詢更新一樣直接換（既有行為，不是新的閃動）。
+    //
+    // 抖動：三個寫死的常數會讓所有分頁在 Google 真的 5xx 時同步重打，典型的
+    // thundering herd。±30% 隨機化把它們錯開。
+    var RETRY_DELAYS = [800, 2500, 6000];
+    var retryAt = 0;
+    var retryTimer = null;
+    var inFlight = false;
+
+    var waitingForeground = false;
+
+    // 回到前景就補跑。不能靠 startPolling 那條 visibilitychange —— 它要求距離上次
+    // 執行超過一整個輪詢間隔（10 分鐘）才補，切出去三十秒再回來是不會動的。
+    function resumeOnForeground() {
+      if (waitingForeground) return;
+      waitingForeground = true;
+      document.addEventListener("visibilitychange", function onVis() {
+        if (document.hidden) return;
+        document.removeEventListener("visibilitychange", onVis);
+        waitingForeground = false;
+        refreshSignup(true);      // 用重試身分呼叫，保留剩下的重試額度
+      });
+    }
+
+    function scheduleRetry() {
+      if (retryAt >= RETRY_DELAYS.length) return;
+      var base = RETRY_DELAYS[retryAt++];
+      var wait = Math.round(base * (0.7 + Math.random() * 0.6));
+      if (retryTimer) clearTimeout(retryTimer);        // 一定先清，不要覆寫掉 handle
+      retryTimer = setTimeout(function () {
+        retryTimer = null;
+        // 背景分頁不對外連線（startPolling 也是這個規矩）。額度要還回去，
+        // 否則從 IG／Threads 點進來又立刻切回 App 的人，三次重試會被靜默吃光，
+        // 然後要等十分鐘才有下一次機會。
+        if (document.hidden) { retryAt--; resumeOnForeground(); return; }
+        refreshSignup(true);
+      }, wait);
+    }
+
+    function refreshSignup(isRetry) {
+      // in-flight 檢查要在最前面：被擋下的那次如果先跑了下面的歸零，等於把待命中的
+      // 重試 timer 清掉、退避重來，然後什麼事都沒做。
+      if (inFlight) return;
+      // 輪詢觸發的那一次要把重試狀態歸零。清得掉排程中的 timer，但清不掉已經發出去
+      // 的 fetch；那條由 inFlight 擋住後來的呼叫，代價是輪詢 tick 最長會被吞掉一個
+      // 逾時的時間（8 秒）。
+      if (!isRetry) {
+        retryAt = 0;
+        if (retryTimer) { clearTimeout(retryTimer); retryTimer = null; }
+      }
+      inFlight = true;
       fetchSignupCount()
         .then(function (num) {
+          inFlight = false;
           if (num === null) return;   // 沒設 sheetUrl／mock 模式：不算失敗，維持 baseValue
+          retryAt = 0;
           reportFetchSuccess("sheet", num);
-          if (numberEl) {
-            if (fallbackTimer) { clearTimeout(fallbackTimer); fallbackTimer = null; }
-            applyCount(numberEl, num);
-            revealCounter();
+          writeCachedCount(num);      // 存起來當下次抓失敗時的後備值
+          // 渲染錯誤不能走到下面的失敗處理 —— 那會把一個畫面 bug 回報成
+          // data_fetch_error 送進 GA4，還白白觸發三次網路重試。
+          try {
+            if (numberEl) {
+              if (fallbackTimer) { clearTimeout(fallbackTimer); fallbackTimer = null; }
+              applyCount(numberEl, num);
+              revealCounter();
+            }
+            syncPolicyRatio(num);
+          } catch (e) {
+            if (window.console && console.error) console.error("[join] render failed:", e);
           }
-          syncPolicyRatio(num);
-        })
-        .catch(function (err) {
+        }, function (err) {
+          inFlight = false;
           reportFetchFailure("sheet", err);
-          // 抓不到就把預設值放出來，不要讓數字一直藏著
+          // 先把後備值放出來（上次抓到的真值優先，沒有才用 baseValue），不要讓數字
+          // 一直藏著；同時在背景退避重試，其中一次成功就會直接換成真值。
           if (numberEl && fallbackTimer) {
             clearTimeout(fallbackTimer); fallbackTimer = null;
-            setCountValue(numberEl, CFG.signup.baseValue);
+            setCountValue(numberEl, fallbackCount());
           }
           revealCounter();
+          if (!err || !err.permanent) scheduleRetry();
         });
     }
     refreshSignup();
     startPolling(refreshSignup, CFG.signup.pollMs);
+
+    // 重試最快十秒左右用完（每次都走滿 8 秒逾時的話約 40 秒），之後要等下一輪輪詢
+    // （10 分鐘）。手機切 Wi-Fi／4G、進電梯、搭捷運的斷線都比這久，恢復連線後不補抓
+    // 的話，首次造訪者會盯著後備值看最久十分鐘 —— 正是這次要解決的症狀。
+    //
+    // debounce：網路 flapping 時 online 會連發，每次都把重試額度歸零，退避就永遠
+    // 長不起來，變成約一秒一次的熱迴圈。兩秒內只吃一次，並加一點隨機延遲，
+    // 免得多個分頁在同一瞬間一起重打。
+    var lastOnlineAt = 0;
+    window.addEventListener("online", function () {
+      var now = Date.now();
+      if (now - lastOnlineAt < 2000) return;
+      lastOnlineAt = now;
+      setTimeout(function () { refreshSignup(); }, Math.round(Math.random() * 400));
+    });
 
     var genderSection = document.getElementById("genderRatio");
     if (CFG.genderRatio.enabled && genderSection) {
       genderSection.hidden = false;
       if (CFG.genderRatio.mode === "policy") {
         // 不對外連線：比例由報名人數推導，隨每次 refreshSignup 一起更新。
-        // 這裡先用 baseValue 畫一次，免得 fetch 回來前停在 HTML 的預設值。
-        syncPolicyRatio(CFG.signup.baseValue);
+        // 這裡先用後備值畫一次，免得 fetch 回來前停在 HTML 的預設值。
+        syncPolicyRatio(fallbackCount());
       } else {
         function refreshGender() {
           fetchGenderRatio()
