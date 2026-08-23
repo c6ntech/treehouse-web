@@ -426,3 +426,116 @@ curl -s "https://docs.google.com/spreadsheets/d/105ymHSvKcdbQ33xiKtSXF0DPkltpWZY
    並處理下面那三件事（`paused_*` 沒有視覺、負數沒擋、誤差固定偏女性）。
 4. **內部流量排除** —— Morgan 在 GA4 後台補（原訂 08-22）。
 5. App Store／Google Play 連結（Public Release 前）。
+
+
+---
+
+# 2026-08-23 交接快照（Mac → Windows）
+
+`main` = 這一版，working tree 乾淨，本機與 `origin/main` 同一個 commit。
+**網頁相關的東西全部在 GitHub 上**，沒有留在 Mac 的檔案。（repo 目錄下有一個
+41MB 的 `Treehouse App 商店圖片設計.zip`，被 `.gitignore` 的 `*.zip` 排除，
+是素材原始檔，不需要跨機器搬。）
+
+線上實測（https://gettreehouse.app/join/ ，手機 390×844）：
+
+| 項目 | 狀態 |
+|---|---|
+| 報名人數 | 366（Sheet B1，`lastGoodFetch` 有值） |
+| 男女比 | 女 53% / 男 47%，加總 100 |
+| 倒數 | 3 天 19 時（目標 2026-08-27 12:00 +08:00） |
+| CTA | 首屏內，餘裕 40px |
+| 計數器滾動 | 收尾正常，守衛 `fixes: 0` |
+| GA4 | `gtag` 已載入 |
+| `lastError` | 空 |
+| Console | 無訊息 |
+
+## 這三天（08-21 ~ 08-23）在 Mac 上改了什麼
+
+### 1. 男女比帶寬 47–53 → 49–53（`96f839a`）
+Morgan：「男生 53 太多了，上限 51」。女性 49~53 ＝ 男性 47~51。男性過半的時間
+從 22% 降到 5%，且只剩「女 49」這一格，連續長度固定就是 `changeEverySignups`。
+`femaleBias` 維持 1.0，但帶寬縮掉後它的影響變小（0→11% / 0.5→8% / 1.0→5%），
+1.5 以上已無意義。實測對照表在 `join.config.js` 與上面「性別比區塊」那節。
+
+### 2. 男性百分比改成從女性推導（`210f6e6`）
+原本兩邊各自 `Math.round`，csv 模式下真實比例落在 x.5 時會雙雙進位、顯示
+女50% + 男51% = 101%。policy 模式輸出零差異（v=0..100 全掃）。
+**csv 模式上線前還有三件事要補，見上面那一節。**
+
+### 3. 抓取失敗不再掉回 baseValue（`30d6972`）—— 這是這三天最重要的一件事
+**事故**：08-22 傍晚 Morgan 回報「網頁突然變 113」。真值 310。原因是對 Sheet 的
+fetch 偶發失敗一次，程式就顯示 `signup.baseValue`，而輪詢是 10 分鐘一次 ——
+一次 0.5 秒的網路抖動會讓訪客看到十分鐘的錯誤數字。
+
+三層防線：
+
+- **localStorage 快取上次抓到的真值**。key 是 `th_join_signup_count:<sheetId>`
+  （綁 sheet id，換表自動失效）、TTL 24 小時、上界五位數、失效即刪。抓失敗時顯示
+  `max(快取, baseValue)` —— 人數只增不減，取大的比較接近真值。
+  `mode: "mock"` 與未設 `sheetUrl` 不吃快取，維持設定檔對 mock 的契約。
+- **退避重試** 800 / 2500 / 6000ms，±30% jitter。背景分頁不打，**但額度會還回去
+  並掛一次性 `visibilitychange`，回到前景立刻補跑** —— 不能靠 `startPolling` 那條，
+  它要求距離上次執行超過一整個輪詢間隔（10 分鐘）才補，切出去三十秒再回來不會動。
+  4xx（429 除外）視為永久性錯誤，不重試。
+- **`online` 事件補抓**（debounce 2 秒 + 隨機延遲），補掉「重試用完到下一輪輪詢」
+  之間最長十分鐘的盲區。手機切 Wi-Fi/4G、進電梯的斷線都比重試窗長。
+
+過程中一併修掉三個會讓上面失效的坑：
+
+1. **B1 空白時 `Number(null)` 是 0 而且 `isFinite(0)` 為真** → 會被當成抓成功，
+   把好的快取覆蓋成 0、畫面顯示 `00000`。現在空值/非正數一律視為錯誤走重試。
+   （IMPORTRANGE 重算期間就可能短暫回空值，這不是假設性問題。）
+2. **fetch 沒有逾時** → 行動網路下可以懸掛數分鐘，in-flight 旗標永遠是 true，
+   輪詢／online／回前景三條補抓路徑全被吞。加了 8 秒 AbortController 逾時，
+   沒有 AbortController 的舊瀏覽器用 `Promise.race` 補。
+3. **渲染例外會落進 fetch 的 catch** → 一個畫面 bug 會被回報成 `data_fetch_error`
+   送進 GA4，還白白觸發三次網路重試。改成 `.then(成功, 失敗)` + 內層 try/catch。
+
+**已知限制（沒辦法從客戶端解）**：第一次進站的人 + 那一刻 fetch 失敗 + 瀏覽器沒有
+快取 → 只能顯示 `baseValue`。所以才有下面那件事。
+
+### 4. `baseValue` 語意改變 + 自動對齊（`30d6972`）
+**以前**：對齊 Sheet 的 B2 起算值（113）。**現在**：貼近當下真值。
+
+`tools/build-og-image.sh` 每次重截分享卡時會自動把 `signup.baseValue` 改成當下
+真值（讀 `__JOIN_DEBUG__.lastGoodFetch.sheet`，整行必須只有數字才採用）。所以
+**跑那支腳本會順手改一個進版控的原始碼檔**，跑完 `git status` 會多一個
+`assets/join.config.js` 的改動，這是預期的，不是誤改。
+
+### 5. UTM：這一波只發 Threads
+Morgan 08-21 確認。規則、已發連結記錄表、Threads 轉址包裝（`l.threads.com/?u=`）
+的辨識方式都寫在 `join/UTM_RULES.md`。**每次給新連結都要一併提醒發文前的兩步驟**
+（重截分享卡 → Meta Sharing Debugger 按 Scrape Again），見 `UTM_RULES.md` §二之二。
+
+## 給接手的人：容易踩的三個坑
+
+1. **對稿工具會被 localStorage 快取影響**。同一台機器重跑 `compare.html` /
+   `spec-check.html` 時，計數器顯示的數字取決於上一輪殘留的
+   `th_join_signup_count:<sheetId>`，不再是穩定的 `baseValue`。要比對截圖就先清掉
+   那個 key，或用無痕。
+2. **改 `assets/*.js` 之後測線上會看到舊版**（`max-age=600`）。確認某個新符號存在
+   再相信畫面，不要直接相信 curl（curl 帶 query 破快取，頁面請求的是不帶 query 的
+   同一個 URL）。
+3. **Windows 那邊的 git 帳號**：repo 在 c6ntech org。Mac 這台已設
+   `github.com/c6ntech/*` 走 `gh auth git-credential`（active account = c6ntech），
+   Windows 如果也有雙帳號要比照處理，否則 push 會 403。
+
+## 目前開著的待辦（依急迫度）
+
+1. **8/27 12:00 公測開始** —— 倒數到點會自動從「距離公測開始還有」切成
+   「公測已經開始」，不需要改設定或重新部署（已用過去日期實測過）。但 CTA 仍然是
+   Google 表單，公測當天要不要換掉、換成什麼，還沒定。
+2. **內部流量排除**（GA4 後台）—— 原訂 08-22，Morgan 自己補。沒排除的話你我測試
+   的流量都會算進報表。
+3. **外包 CSV** —— 到手後把 `genderRatio.mode` 改成 `"csv"` 並填 `csvUrl`，
+   **同時要處理上面「csv 模式上線前要補的三件事」**（`paused_*` 是 dead code、
+   負數沒擋、四捨五入誤差固定偏女性）。
+4. **頁尾** —— App 正式上線時把 `footer.enabled` 改回 `true`。
+5. **App Store / Google Play 連結** —— Public Release 前補進 `cta.iosUrl` /
+   `androidUrl`，並把 `cta.mode` 改成 `"device"`。
+6. **分享卡的網址沒有版本號** —— `og:image` 永遠是同一個 URL，Meta 照網址快取，
+   換了圖它不一定馬上知道（08-22 遇過一次，Scrape Again 後仍顯示舊圖，等一下才更新）。
+   根治方式是掛 `?v=<時間戳>` 並讓 `build-og-image.sh` 自動更新。08-22 提過，
+   Morgan 當時說不急，沒做。
+7. **Chiron Sung HK 仍外連 Google Fonts**（約 858KB），是頁面剩下最大的一塊。
