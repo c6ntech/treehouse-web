@@ -14,7 +14,7 @@
   // ---- Config：內建預設值 + 淺合併 window.JOIN_CONFIG，任一欄位打錯只影響該欄位 ----
   var DEFAULTS = {
     signup: { mode: "mock", baseValue: 298, round: "floor", sheetUrl: null, pollMs: 600000 },
-    genderRatio: { enabled: false, mode: "policy", femaleMin: 66, femaleMax: 66, changeEverySignups: 5, femaleBias: 1.0, csvUrl: null, pauseThreshold: 0.55, pollMs: 600000 },
+    genderRatio: { enabled: false, mode: "policy", steps: null, femaleMin: 65, femaleMax: 65, changeEverySignups: 5, femaleBias: 1.0, csvUrl: null, pauseThreshold: 0.55, pollMs: 600000 },
     pricing: { enabled: false, amountLabel: "NT$240", trialDuration: "30 天" },
     countdown: { enabled: false, targetIso: null },
     cta: { mode: "form", formBaseUrl: "https://forms.gle/oKRJeB39md3gFTvH9", iosUrl: null, androidUrl: null },
@@ -723,7 +723,7 @@
   // 這一區顯示的是「派發進 Beta 的男女比」，不是表單填答者的性別分布。
   // Beta 期間 App 內的自動性別平衡尚未開啟，實際上是依計畫書手動控制派發
   // （目標線上男女比 女 55：男 45）。
-  // ⚠️ 2026-08-26 起 join.config.js 把 femaleMin/femaleMax 都設成 66，畫面顯示的是
+  // ⚠️ 2026-08-26 起 join.config.js 用 genderRatio.steps 階梯表指定顯示值，畫面顯示的是
   //    人工寫死的固定值，**不是**派發政策也不是從它推導的。下面整段遊走說明在
   //    femaleMin === femaleMax 時完全不會執行（policyFemalePct 開頭就早退）。
   //
@@ -749,9 +749,32 @@
 
   function policyFemalePct(n) {
     var cfg = CFG.genderRatio;
+
+    // ---- 階梯表（genderRatio.steps）----
+    // 有設就完全接管，femaleMin/femaleMax/changeEverySignups/femaleBias 全部不生效。
+    // 格式 [[報名人數門檻, 女性百分比], ...]，由小到大。取「最後一個門檻 <= n」的百分比；
+    // n 小於第一個門檻就用第一筆，n 超過最後一個門檻就停在最後一筆。
+    // 輸出夾在 0~100，壞資料（非陣列、非數字、NaN）一律略過該筆而不是讓畫面壞掉。
+    var steps = cfg.steps;
+    if (steps && steps.length) {
+      var nv = Math.floor(Number(n));
+      if (!isFinite(nv) || nv < 0) nv = 0;
+      var pct = null;
+      for (var si = 0; si < steps.length; si++) {
+        var st = steps[si];
+        if (!st || st.length < 2) continue;
+        var at = Number(st[0]), val = Number(st[1]);
+        if (!isFinite(at) || !isFinite(val)) continue;
+        if (pct === null) pct = val;              // 第一筆有效值當作下限前的預設
+        if (nv >= at) pct = val;
+      }
+      if (pct !== null) return Math.max(0, Math.min(100, Math.round(pct)));
+      // 全部都是壞資料就往下走原本的邏輯
+    }
+
     var lo = Math.min(cfg.femaleMin, cfg.femaleMax);
     var hi = Math.max(cfg.femaleMin, cfg.femaleMax);
-    if (hi <= lo) return Math.round(lo);
+    if (hi <= lo) return Math.max(0, Math.min(100, Math.round(lo)));
 
     var K = cfg.changeEverySignups > 0 ? cfg.changeEverySignups : 5;
     var bias = cfg.femaleBias > 0 ? cfg.femaleBias : 0;
