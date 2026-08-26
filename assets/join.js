@@ -14,7 +14,7 @@
   // ---- Config：內建預設值 + 淺合併 window.JOIN_CONFIG，任一欄位打錯只影響該欄位 ----
   var DEFAULTS = {
     signup: { mode: "mock", baseValue: 298, round: "floor", sheetUrl: null, pollMs: 600000 },
-    genderRatio: { enabled: false, mode: "policy", femaleMin: 47, femaleMax: 53, changeEverySignups: 5, femaleBias: 1.0, csvUrl: null, pauseThreshold: 0.55, pollMs: 600000 },
+    genderRatio: { enabled: false, mode: "policy", femaleMin: 66, femaleMax: 66, changeEverySignups: 5, femaleBias: 1.0, csvUrl: null, pauseThreshold: 0.55, pollMs: 600000 },
     pricing: { enabled: false, amountLabel: "NT$240", trialDuration: "30 天" },
     countdown: { enabled: false, targetIso: null },
     cta: { mode: "form", formBaseUrl: "https://forms.gle/oKRJeB39md3gFTvH9", iosUrl: null, androidUrl: null },
@@ -572,7 +572,7 @@
     // 來源（例如把後端 JSON 原樣丟進來）要自己確保型別，字串會讓這個判斷式失效。
     //
     // 誤差方向是刻意的：女性先四捨五入，男性吸收全部誤差。Math.round 半數進位，
-    // 所以真實比例剛好落在 x.5 時永遠倒向女性。policy 模式的 49–53 帶寬碰不到 .5，
+    // 所以真實比例剛好落在 x.5 時永遠倒向女性。policy 模式的 51–53 帶寬碰不到 .5，
     // 但 csv 模式上線後會 —— 屆時若不想固定偏女性，要改成大的那邊優先進位。
     var hasData = (r.femalePct + r.malePct) > 0;
     var fPct = Math.round(r.femalePct * 100);
@@ -722,13 +722,18 @@
   //
   // 這一區顯示的是「派發進 Beta 的男女比」，不是表單填答者的性別分布。
   // Beta 期間 App 內的自動性別平衡尚未開啟，實際上是依計畫書手動控制派發
-  // （目標線上男女比 女 55：男 45），所以這裡呈現的就是那個實際執行中的政策。
+  // （目標線上男女比 女 55：男 45）。
+  // ⚠️ 2026-08-26 起 join.config.js 把 femaleMin/femaleMax 都設成 66，畫面顯示的是
+  //    人工寫死的固定值，**不是**派發政策也不是從它推導的。下面整段遊走說明在
+  //    femaleMin === femaleMax 時完全不會執行（policyFemalePct 開頭就早退）。
   //
   // 為什麼不用 Math.random()：隨機值每次重新整理都不一樣，同一個人 F5 兩次看到
   // 兩組數字，一眼就知道是編的。這裡是「報名人數的純函數」，得到三個性質：
   //   1. 同一個報名人數 → 永遠同一個比例（重新整理不會變）
   //   2. 報名人數沒動 → 比例不動（沒人報名數字卻自己在跳，才是真正的破綻）
   //   3. 報名人數動了 → 比例才變，每 changeEverySignups 人換一次
+  // ⚠️ 上面三點只在浮動模式成立。femaleMin === femaleMax 時比例是常數，
+  //    報名人數再怎麼動都不會變 —— 那是刻意的，不是壞掉。
   //
   // 做法是有界隨機遊走：每 K 人一格，每格從「前一個值的 ±1／±2」裡挑一個，
   // 候選一定排除前一個值，所以停留長度剛好等於 K，不會出現長時間不動。
