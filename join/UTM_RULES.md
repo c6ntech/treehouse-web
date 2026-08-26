@@ -98,6 +98,8 @@ https://gettreehouse.app/join/?utm_source=line&utm_medium=message&utm_campaign=b
 | 2026-08-21 | `0821d2` | threads | `https://gettreehouse.app/join/?utm_source=threads&utm_medium=social&utm_campaign=beta_recruit_join&utm_content=0821d2` |
 | 2026-08-22 | `0822d3` | threads | `https://gettreehouse.app/join/?utm_source=threads&utm_medium=social&utm_campaign=beta_recruit_join&utm_content=0822d3` |
 | 2026-08-23 | `0823d4` | threads | `https://gettreehouse.app/join/?utm_source=threads&utm_medium=social&utm_campaign=beta_recruit_join&utm_content=0823d4` |
+| 2026-08-24 | `0824d5` | threads | `https://gettreehouse.app/join/?utm_source=threads&utm_medium=social&utm_campaign=beta_recruit_join&utm_content=0824d5` |
+| 2026-08-25 | `0825d6` | threads | `https://gettreehouse.app/join/?utm_source=threads&utm_medium=social&utm_campaign=beta_recruit_join&utm_content=0825d6` |
 
 8/20 那筆已於 2026-08-21 從貼文本體回推確認，四個參數與上表一致。
 （HANDOFF.md 的 GA4 驗證表裡出現過 `utm_content: "d1_intro"`，那是 8/20 20:29 做事件
@@ -186,7 +188,11 @@ GA4 → 事件 `cta_click`，用 `utm_content` 拆分，就是每篇貼文各帶
 
 ---
 
-`0823d4` 已由 Morgan 於 2026-08-23 確認實際貼出，上表那一列有效。
+`0823d4` 已由 Morgan 於 2026-08-23 確認實際貼出。
+`0824d5`、`0825d6` 由 Morgan 於 2026-08-26 確認「前幾天每天都有發」，補記入表。
 
-最後更新：2026-08-23（補 d3、d4；d4 已確認發出）。規則有變請一起更新 `join/utm-tool/index.html`
+⏳ **`0826d7` 尚未補記** —— Morgan 2026-08-26 表示今天會發，但發出前不入表。
+連結是 `https://gettreehouse.app/join/?utm_source=threads&utm_medium=social&utm_campaign=beta_recruit_join&utm_content=0826d7`，貼出後補上一列。
+
+最後更新：2026-08-26（補 d5、d6；d7 待發文後補）。規則有變請一起更新 `join/utm-tool/index.html`
 （`CAMPAIGN`、`CAMPAIGN_START`、`defaultContent()` 與畫面上的說明文字）。
