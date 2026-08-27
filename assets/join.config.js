@@ -20,7 +20,7 @@ window.JOIN_CONFIG = {
     // 明顯是錯的。現在改成每次跑 tools/build-og-image.sh 重截分享卡時自動對齊當下真值
     // （腳本會讀 __JOIN_DEBUG__.lastGoodFetch.sheet），所以這裡通常不用手改。
     // 要調整起算人數仍然是改 Sheet 的 B2。
-    baseValue: 948,
+    baseValue: 1039,
     round: "floor",             // "floor" 無條件捨去到整數；"none" 不處理（Sheet 應該本來就是整數）
 
     // ⚠️ 這份試算表會被公開讀取（Google 的 gviz 端點要求整份表可公開存取）。
