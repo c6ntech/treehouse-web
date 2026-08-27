@@ -101,6 +101,7 @@ https://gettreehouse.app/join/?utm_source=line&utm_medium=message&utm_campaign=b
 | 2026-08-24 | `0824d5` | threads | `https://gettreehouse.app/join/?utm_source=threads&utm_medium=social&utm_campaign=beta_recruit_join&utm_content=0824d5` |
 | 2026-08-25 | `0825d6` | threads | `https://gettreehouse.app/join/?utm_source=threads&utm_medium=social&utm_campaign=beta_recruit_join&utm_content=0825d6` |
 | 2026-08-26 | `0826d7` | threads | `https://gettreehouse.app/join/?utm_source=threads&utm_medium=social&utm_campaign=beta_recruit_join&utm_content=0826d7` |
+| 2026-08-27 | `0827d8` | threads | `https://gettreehouse.app/join/?utm_source=threads&utm_medium=social&utm_campaign=beta_recruit_join&utm_content=0827d8` |
 
 8/20 那筆已於 2026-08-21 從貼文本體回推確認，四個參數與上表一致。
 （HANDOFF.md 的 GA4 驗證表裡出現過 `utm_content: "d1_intro"`，那是 8/20 20:29 做事件
@@ -192,8 +193,13 @@ GA4 → 事件 `cta_click`，用 `utm_content` 拆分，就是每篇貼文各帶
 `0823d4` 已由 Morgan 於 2026-08-23 確認實際貼出。
 `0824d5`、`0825d6` 由 Morgan 於 2026-08-26 確認「前幾天每天都有發」，補記入表。
 
-`0826d7` 已由 Morgan 於 2026-08-26 20:10 確認貼出，補記入表。發文前分享卡已重截
+`0826d7` 已由 Morgan 於 2026-08-26 20:10 確認貼出。發文前分享卡已重截
 （`00742`、女66%/男34%、新文案）並經 Meta Scrape Again。
 
-最後更新：2026-08-26（補 d5、d6、d7）。規則有變請一起更新 `join/utm-tool/index.html`
+`0827d8` 已由 Morgan 於 2026-08-27 確認貼出 —— 這是**公測日**（8/27 12:00 倒數歸零、
+12:11 起測試者湧入）。當天分享卡重截了三次：11:00 的倒數版、12:20 改成
+「測試進行中」的 live 版、19:59 的 `01039`。倒數歸零後頁面會自動換成 live 狀態，
+**卡片不會**，所以 12:00 前後各需要一次重截，這是日後跨越類似節點時要記得的事。
+
+最後更新：2026-08-27（補 d8；公測日）。規則有變請一起更新 `join/utm-tool/index.html`
 （`CAMPAIGN`、`CAMPAIGN_START`、`defaultContent()` 與畫面上的說明文字）。
