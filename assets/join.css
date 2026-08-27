@@ -647,7 +647,18 @@ button:focus-visible,
   font-style: normal;
   color: rgba(255, 255, 255, 0.62);
 }
-.hero__countdown-chip--live { align-items: center; gap: 14px; padding: 16px 26px; }
+/* 公測開始後的橫幅。跟倒數卡不同的是它裝的是一整句話，不是幾個數字，
+   所以不沿用 .hero__countdown-chip 的 320*--u 寬度上限 —— 那個寬度是為了跟
+   .signboard 對齊，但這句 12 個字在該寬度下放不下（實測 360px 視窗溢出 128px）。
+   改成吃滿父容器，字級用 clamp 收到放得下為止。
+   ⚠️ 不能改成換行：360x640 時 CTA 距首屏底部只剩 18px，橫幅一變兩行就把 CTA 推出去。*/
+.hero__countdown-chip--live {
+  align-items: center;
+  gap: 10px;
+  padding: 16px 14px;
+  max-width: 100%;
+  justify-content: center;
+}
 .cd-live-dot {
   flex: none;
   width: 11px;
@@ -660,11 +671,17 @@ button:focus-visible,
 .cd-live-text {
   font-family: var(--font-display);
   font-weight: 700;
-  font-size: clamp(21px, 6.6vw, 26px);
+  /* 每個尺寸都實測過有餘裕，不是估的（文字寬 / 可用寬）：
+       1440px  321 / 343      414px  276 / 305      390px  255 / 289
+        375px  244 / 274      360px  236 / 259      320px  203 / 219
+     上限 26 是桌機 420px chip 的極限，下限 17 是 320px 窄機的極限。
+     動這兩個數字之前先量，這句話 12 個字沒有換行的餘地。 */
+  font-size: clamp(17px, 5.3vw, 26px);
   line-height: 1.2;
   letter-spacing: 0.03em;
   color: #FFFFFF;
   white-space: nowrap;
+  min-width: 0;
 }
 
 .cd-sep {
@@ -800,8 +817,8 @@ button:focus-visible,
   .cd-unit b { font-size: 32px; }
   .cd-unit i { font-size: 11px; line-height: 16px; }
   .cd-sep { font-size: 23px; padding-bottom: 18px; }
-  .cd-live-text { font-size: 32px; }
-  .hero__countdown-chip--live { padding: 18px 30px; }
+  .cd-live-text { font-size: 26px; }
+  .hero__countdown-chip--live { padding: 18px 26px; }
 
   .site-footer { margin-top: 64px; padding: 40px 0 48px; }
   .site-footer__wordmark { font-size: 32px; }
