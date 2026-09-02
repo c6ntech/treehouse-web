@@ -60,7 +60,21 @@
 /* ---------- 2. Base ---------- */
 *, *::before, *::after { box-sizing: border-box; }
 
-html { -webkit-text-size-adjust: 100%; }
+/* html 的背景是「視窗以外」那塊區域的顏色，跟 body 的背景是兩回事。
+   iOS Chrome 的網址列會自動收合，收合的瞬間會露出視窗外的區域，瀏覽器
+   用 html 的背景色去漆它。html 沒設就是透明 → 漆成白色，於是首屏上方
+   出現一條白帶（2026-09-02 回報，實測 getComputedStyle(html) 為
+   rgba(0,0,0,0)）。theme-color 幫不上忙：iOS Chrome 不吃那個 meta。
+
+   兩端顏色不同，所以不能只給一個色：頁面頂端是 .hero 的 #060624，
+   底端是 body 的 --skin 米色。給 html 一段不會捲動的漸層，兩端過捲
+   都會露出正確的顏色。中間 50% 的斷點位置不影響觀感 —— 使用者只會
+   在最頂或最底過捲時看到這層。 */
+html {
+  -webkit-text-size-adjust: 100%;
+  background: linear-gradient(180deg, #060624 0%, #060624 50%, var(--skin) 50%, var(--skin) 100%);
+  background-attachment: fixed;
+}
 
 body.join {
   margin: 0;
