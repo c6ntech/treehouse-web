@@ -14,7 +14,7 @@
   // ---- Config：內建預設值 + 淺合併 window.JOIN_CONFIG，任一欄位打錯只影響該欄位 ----
   var DEFAULTS = {
     signup: { mode: "mock", baseValue: 298, round: "floor", sheetUrl: null, pollMs: 600000 },
-    genderRatio: { enabled: false, mode: "policy", steps: null, femaleMin: 53, femaleMax: 55, changeEverySignups: 5, femaleBias: 1.0, csvUrl: null, pauseThreshold: 0.55, pollMs: 600000 },
+    genderRatio: { enabled: false, mode: "policy", steps: null, femaleMin: 52, femaleMax: 53, changeEverySignups: 10, changeEveryOffset: 3, femaleBias: 1.0, csvUrl: null, pauseThreshold: 0.55, pollMs: 600000 },
     pricing: { enabled: false, amountLabel: "NT$240", trialDuration: "30 天" },
     countdown: { enabled: false, targetIso: null },
     cta: { mode: "form", formBaseUrl: "https://forms.gle/oKRJeB39md3gFTvH9", iosUrl: null, androidUrl: null },
@@ -778,8 +778,14 @@
 
     var K = cfg.changeEverySignups > 0 ? cfg.changeEverySignups : 5;
     var bias = cfg.femaleBias > 0 ? cfg.femaleBias : 0;
+    // changeEveryOffset 把換值的時機平移，讓切換點落在指定的人數上。
+    // 沒有它的話桶界一律是 K 的倍數（K=10 就是 1230 / 1240 / 1250），
+    // 設成 3 就變成 1233 / 1243 / 1253。純粹是相位，不影響停留長度、
+    // 跳動幅度或分佈；未設或設 0 時行為與先前完全相同。
+    var off = Number(cfg.changeEveryOffset);
+    if (!isFinite(off)) off = 0;
     // 人數再大也不會拖慢頁面；上限遠高於這波 Beta 的可能規模
-    var buckets = Math.min(Math.floor(Math.max(0, n) / K), 5000);
+    var buckets = Math.min(Math.floor(Math.max(0, n - off) / K), 5000);
 
     var v = Math.round((lo + hi) / 2);
     if (v === 50) v = 51;                           // 50/50 看起來最假，整條路徑都跳過它
