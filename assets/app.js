@@ -68,14 +68,52 @@
     }
   };
 
+  // ---- ?lang= URL parameter (set by the App's in-app webview) ----
+  // Any zh* value (zh, zh-TW, zh-Hant, zh-hk …) → "zh"; any en* value → "en";
+  // anything else → null (ignored). "en" still respects the EN_READY gate.
+  function normalizeLang(v) {
+    v = (v || "").toLowerCase();
+    if (v.indexOf("zh") === 0) return "zh";
+    if (v.indexOf("en") === 0 && EN_READY) return "en";
+    return null;
+  }
+
+  function langFromUrl() {
+    var m = /[?&]lang=([^&#]*)/.exec(location.search);
+    if (!m) return null;
+    var raw = m[1];
+    try { raw = decodeURIComponent(raw.replace(/\+/g, " ")); } catch (e) {}
+    return normalizeLang(raw);
+  }
+
+  // "zh"/"en" when this page was opened with a valid ?lang=, else null. If set,
+  // nav/footer links carry the current language forward so the whole visit
+  // stays consistent.
+  var urlLang = langFromUrl();
+
+  // Append ?lang=<lang> to an internal path when the page was opened with ?lang=.
+  function withLang(path, lang) {
+    return urlLang ? path + "?lang=" + lang : path;
+  }
+
   // ---- Resolve current language ----
+  // Priority: ?lang= URL param → localStorage th-lang → navigator.language.
   function detectLang() {
+    if (urlLang) return urlLang; // setLang() persists it to localStorage
     var saved = null;
     try { saved = localStorage.getItem("th-lang"); } catch (e) {}
     if (saved === "zh" || (saved === "en" && EN_READY)) return saved;
     if (!EN_READY) return "zh";
     var nav = (navigator.language || "en").toLowerCase();
     return nav.indexOf("zh") === 0 ? "zh" : "en";
+  }
+
+  // Keep the address bar's ?lang= in sync after a manual switch, so a reload
+  // doesn't snap back to the language the page was originally opened with.
+  function syncUrlLang(lang) {
+    if (!urlLang || !window.history || !history.replaceState) return;
+    var search = location.search.replace(/([?&]lang=)[^&#]*/, "$1" + lang);
+    try { history.replaceState(history.state, "", location.pathname + search + location.hash); } catch (e) {}
   }
 
   function currentKey() {
@@ -88,10 +126,10 @@
   }
 
   // ---- Render header ----
-  function renderHeader(t, activeKey) {
+  function renderHeader(t, lang, activeKey) {
     var navHtml = PAGES.map(function (pg) {
       var current = pg.key === activeKey ? ' aria-current="page"' : "";
-      return '<a href="' + pg.path + '"' + current + '>' + t.nav[pg.key] + "</a>";
+      return '<a href="' + withLang(pg.path, lang) + '"' + current + '>' + t.nav[pg.key] + "</a>";
     }).join("");
 
     var langHtml = EN_READY
@@ -103,7 +141,7 @@
 
     return '' +
       '<div class="site-header__inner">' +
-        '<a class="brand" href="/faq" aria-label="Treehouse">' +
+        '<a class="brand" href="' + withLang("/faq", lang) + '" aria-label="Treehouse">' +
           '<span class="brand__logo" aria-hidden="true"><img src="' + LOGO_SRC + '" alt=""></span>' +
           '<span class="brand__name">treehouse</span>' +
         "</a>" +
@@ -113,9 +151,9 @@
   }
 
   // ---- Render footer ----
-  function renderFooter(t) {
+  function renderFooter(t, lang) {
     var links = PAGES.map(function (pg) {
-      return '<a href="' + pg.path + '">' + t.nav[pg.key] + "</a>";
+      return '<a href="' + withLang(pg.path, lang) + '">' + t.nav[pg.key] + "</a>";
     }).join("");
     var year = "2026"; // static build; bump if needed
     return '' +
@@ -153,8 +191,8 @@
 
     var header = document.getElementById("site-header");
     var footer = document.getElementById("site-footer");
-    if (header) { header.className = "site-header"; header.innerHTML = renderHeader(t, currentKey()); }
-    if (footer) { footer.className = "site-footer"; footer.innerHTML = renderFooter(t); }
+    if (header) { header.className = "site-header"; header.innerHTML = renderHeader(t, lang, currentKey()); }
+    if (footer) { footer.className = "site-footer"; footer.innerHTML = renderFooter(t, lang); }
 
     // skip link text
     var skip = document.querySelector(".skip-link");
@@ -168,7 +206,9 @@
     var btns = document.querySelectorAll("[data-set-lang]");
     btns.forEach(function (btn) {
       btn.addEventListener("click", function () {
-        setLang(btn.getAttribute("data-set-lang"));
+        var lang = btn.getAttribute("data-set-lang");
+        setLang(lang);
+        syncUrlLang(lang);
       });
     });
   }
